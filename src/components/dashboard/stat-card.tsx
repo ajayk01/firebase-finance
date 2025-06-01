@@ -1,21 +1,20 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUp, ArrowDown, Landmark } from "lucide-react"; // Keep ArrowUp/Down for general stats case
+import { ArrowUp, ArrowDown } from "lucide-react"; // Keep ArrowUp/Down for general stats case
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title?: string;
   value?: string;
   percentageChange?: number;
-  Icon?: LucideIcon; // For general stats (small icon usually top right)
+  Icon?: LucideIcon;
   isPrimary?: boolean;
   dataAiHint?: string;
-  logoIcon?: LucideIcon; // For bank logo (larger icon, specific to primary bank card)
+  logoIcon?: LucideIcon;
   bankName?: string;
   accountNumber?: string;
-  // Optional: add a currentBalance prop if needed later
-  // currentBalance?: string;
+  currentBalanceText?: string; // New prop for the full balance string
 }
 
 export function StatCard({
@@ -24,22 +23,19 @@ export function StatCard({
   percentageChange,
   Icon,
   isPrimary = false,
-  logoIcon: LogoIconComponent, // Use alias for the component to avoid naming conflict
+  logoIcon: LogoIconComponent,
   bankName,
   accountNumber,
-  // currentBalance
+  currentBalanceText,
 }: StatCardProps) {
-  // Determine if we should show bank details (only for primary cards with relevant info)
-  const showBankDetails = isPrimary && (LogoIconComponent || bankName || accountNumber);
-  // Determine if we should show general stats (if not showing bank details and general info is present)
+  const showBankDetails = isPrimary && (LogoIconComponent || bankName || accountNumber || currentBalanceText);
   const showGeneralStats = !showBankDetails && !!(title || value || Icon || percentageChange !== undefined);
 
   return (
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
-      "flex flex-col", // Use flex to structure content within the card
+      "flex flex-col", 
       isPrimary ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground",
-      // Add padding only if there's content to display
       showBankDetails || showGeneralStats ? "p-4" : ""
     )}>
       {showBankDetails ? (
@@ -48,19 +44,13 @@ export function StatCard({
             {bankName && <h3 className="text-xl font-semibold">{bankName}</h3>}
             {LogoIconComponent && <LogoIconComponent className="h-8 w-8 text-primary-foreground/80" />}
           </div>
-          {accountNumber && <p className="text-2xl font-bold tracking-wider">{accountNumber}</p>}
-          {/* 
-          Example for future use if a currentBalance prop is added:
-          {currentBalance && (
-            <p className="text-sm text-primary-foreground/70 mt-auto pt-2">
-              Current Balance: {currentBalance}
-            </p>
-          )}
-          */}
+          {currentBalanceText ? (
+            <p className="text-xl font-semibold mt-1">{currentBalanceText}</p>
+          ) : accountNumber ? (
+            <p className="text-2xl font-bold tracking-wider">{accountNumber}</p>
+          ) : null}
         </>
       ) : showGeneralStats ? (
-        // This section renders general statistics if bank details aren't shown.
-        // It assumes CardHeader and CardContent handle their own padding, so resets are used.
         <>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 !p-0">
             {title && (
@@ -71,7 +61,7 @@ export function StatCard({
                 {title}
               </CardTitle>
             )}
-            {Icon && ( // This 'Icon' is for the small general stat icon
+            {Icon && (
               isPrimary ? (
                 <Icon className="h-5 w-5 text-primary-foreground/80" />
               ) : (
@@ -105,8 +95,6 @@ export function StatCard({
           </CardContent>
         </>
       ) : (
-        // If neither bank details nor general stats are shown, render null.
-        // The min-h-[8rem] on the Card itself ensures it's visible as an empty box.
         null
       )}
     </Card>
