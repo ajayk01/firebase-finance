@@ -21,6 +21,7 @@ export default function DashboardPage() {
         <SidebarInset className="flex flex-col !p-0">
           <DashboardHeader />
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-auto">
+            {/* First group of StatCards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="Total Revenue"
@@ -38,23 +39,6 @@ export default function DashboardPage() {
                 dataAiHint="expense chart"
               />
               <StatCard
-                title="New Profit"
-                value="$840"
-                percentageChange={7}
-                Icon={Coins}
-                dataAiHint="profit graph"
-              />
-              <StatCard
-                title="Cash Balance"
-                value="$568"
-                percentageChange={2}
-                Icon={CreditCard}
-                dataAiHint="bank account"
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard
                 title="Active Users"
                 value="1,250"
                 percentageChange={12}
@@ -68,6 +52,24 @@ export default function DashboardPage() {
                 Icon={Activity}
                 dataAiHint="order status"
               />
+            </div>
+
+            {/* Second group of StatCards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="New Profit"
+                value="$840"
+                percentageChange={7}
+                Icon={Coins}
+                dataAiHint="profit graph"
+              />
+              <StatCard
+                title="Cash Balance"
+                value="$568"
+                percentageChange={2}
+                Icon={CreditCard}
+                dataAiHint="bank account"
+              />
               <StatCard
                 title="Sales Today"
                 value="$1,200"
@@ -79,7 +81,7 @@ export default function DashboardPage() {
                 title="New Subscriptions"
                 value="45"
                 percentageChange={8}
-                Icon={CreditCard} // Kept CreditCard for this as it's a common subscription icon
+                Icon={CreditCard} 
                 dataAiHint="subscription growth"
               />
             </div>
