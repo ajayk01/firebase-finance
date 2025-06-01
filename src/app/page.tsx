@@ -4,10 +4,7 @@ import { SidebarProvider, Sidebar, SidebarInset } from "@/components/ui/sidebar"
 import { DashboardSidebarContent } from "@/components/dashboard/dashboard-sidebar-content";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { ProfitLossChart } from "@/components/dashboard/profit-loss-chart";
-import { RevenueExpensesChart } from "@/components/dashboard/revenue-expenses-chart";
-import { AppointmentsList } from "@/components/dashboard/appointments-list";
-import { ClientTransactionsTable } from "@/components/dashboard/client-transactions-table";
+// ProfitLossChart, RevenueExpensesChart, AppointmentsList, ClientTransactionsTable removed
 
 import { Wallet, Receipt, Coins, CreditCard, Activity, Users, DollarSign } from "lucide-react";
 
@@ -93,18 +90,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              <ProfitLossChart />
-              <AppointmentsList />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               <RevenueExpensesChart />
-            </div>
+            {/* Charts and tables removed from here */}
             
-            <div className="grid grid-cols-1 gap-6">
-              <ClientTransactionsTable />
-            </div>
           </main>
         </SidebarInset>
       </div>
