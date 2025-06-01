@@ -21,72 +21,75 @@ export default function DashboardPage() {
         <SidebarInset className="flex flex-col !p-0">
           <DashboardHeader />
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-auto">
-            {/* First group of StatCards - Wrapped in a grey box */}
-            <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2">
-                <StatCard
-                  title="Total Revenue"
-                  value="$689"
-                  percentageChange={5}
-                  Icon={Wallet}
-                  isPrimary={true}
-                  dataAiHint="revenue report"
-                />
-                <StatCard
-                  title="Total Expenses"
-                  value="$460"
-                  percentageChange={-5}
-                  Icon={Receipt}
-                  dataAiHint="expense chart"
-                />
-                <StatCard
-                  title="New Profit"
-                  value="$840"
-                  percentageChange={7}
-                  Icon={Coins}
-                  dataAiHint="profit graph"
-                />
-                <StatCard
-                  title="Cash Balance"
-                  value="$568"
-                  percentageChange={2}
-                  Icon={CreditCard}
-                  dataAiHint="bank account"
-                />
+            {/* Parent container for the two stat card groups */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* First group of StatCards - Wrapped in a grey box */}
+              <div className="bg-muted p-4 rounded-lg shadow-md">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <StatCard
+                    title="Total Revenue"
+                    value="$689"
+                    percentageChange={5}
+                    Icon={Wallet}
+                    isPrimary={true}
+                    dataAiHint="revenue report"
+                  />
+                  <StatCard
+                    title="Total Expenses"
+                    value="$460"
+                    percentageChange={-5}
+                    Icon={Receipt}
+                    dataAiHint="expense chart"
+                  />
+                  <StatCard
+                    title="New Profit"
+                    value="$840"
+                    percentageChange={7}
+                    Icon={Coins}
+                    dataAiHint="profit graph"
+                  />
+                  <StatCard
+                    title="Cash Balance"
+                    value="$568"
+                    percentageChange={2}
+                    Icon={CreditCard}
+                    dataAiHint="bank account"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Second group of StatCards - Wrapped in a grey box */}
-            <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2">
-                <StatCard
-                  title="Active Users"
-                  value="1,250"
-                  percentageChange={12}
-                  Icon={Users}
-                  dataAiHint="user statistics"
-                />
-                <StatCard
-                  title="Pending Orders"
-                  value="78"
-                  percentageChange={-3}
-                  Icon={Activity}
-                  dataAiHint="order status"
-                />
-                <StatCard
-                  title="Sales Today"
-                  value="$1,200"
-                  percentageChange={15}
-                  Icon={DollarSign}
-                  dataAiHint="daily sales"
-                />
-                <StatCard
-                  title="New Subscriptions"
-                  value="45"
-                  percentageChange={8}
-                  Icon={CreditCard}
-                  dataAiHint="subscription growth"
-                />
+              {/* Second group of StatCards - Wrapped in a grey box */}
+              <div className="bg-muted p-4 rounded-lg shadow-md">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <StatCard
+                    title="Active Users"
+                    value="1,250"
+                    percentageChange={12}
+                    Icon={Users}
+                    dataAiHint="user statistics"
+                  />
+                  <StatCard
+                    title="Pending Orders"
+                    value="78"
+                    percentageChange={-3}
+                    Icon={Activity}
+                    dataAiHint="order status"
+                  />
+                  <StatCard
+                    title="Sales Today"
+                    value="$1,200"
+                    percentageChange={15}
+                    Icon={DollarSign}
+                    dataAiHint="daily sales"
+                  />
+                  <StatCard
+                    title="New Subscriptions"
+                    value="45"
+                    percentageChange={8}
+                    Icon={CreditCard}
+                    dataAiHint="subscription growth"
+                  />
+                </div>
               </div>
             </div>
 
