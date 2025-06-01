@@ -7,7 +7,8 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 
-import { Wallet, Receipt, Coins, CreditCard, Activity, Users, DollarSign } from "lucide-react";
+// Icons are no longer directly used here, but StatCard might internally if re-enabled.
+// For now, direct imports from lucide-react for page.tsx are not needed for StatCards.
 
 export default function DashboardPage() {
   return (
@@ -26,35 +27,10 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
                 <div className="bg-muted p-4 rounded-lg shadow-md">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <StatCard
-                      title="Total Revenue"
-                      value="$689"
-                      percentageChange={5}
-                      Icon={Wallet}
-                      isPrimary={true}
-                      dataAiHint="revenue report"
-                    />
-                    <StatCard
-                      title="Total Expenses"
-                      value="$460"
-                      percentageChange={-5}
-                      Icon={Receipt}
-                      dataAiHint="expense chart"
-                    />
-                    <StatCard
-                      title="New Profit"
-                      value="$840"
-                      percentageChange={7}
-                      Icon={Coins}
-                      dataAiHint="profit graph"
-                    />
-                    <StatCard
-                      title="Cash Balance"
-                      value="$568"
-                      percentageChange={2}
-                      Icon={CreditCard}
-                      dataAiHint="bank account"
-                    />
+                    <StatCard isPrimary={true} />
+                    <StatCard />
+                    <StatCard />
+                    <StatCard />
                   </div>
                 </div>
               </div>
@@ -64,45 +40,21 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-semibold mb-3">Credit card details</h2>
                 <div className="bg-muted p-4 rounded-lg shadow-md">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <StatCard
-                      title="Active Users"
-                      value="1,250"
-                      percentageChange={12}
-                      Icon={Users}
-                      dataAiHint="user statistics"
-                    />
-                    <StatCard
-                      title="Pending Orders"
-                      value="78"
-                      percentageChange={-3}
-                      Icon={Activity}
-                      dataAiHint="order status"
-                    />
-                    <StatCard
-                      title="Sales Today"
-                      value="$1,200"
-                      percentageChange={15}
-                      Icon={DollarSign}
-                      dataAiHint="daily sales"
-                    />
-                    <StatCard
-                      title="New Subscriptions"
-                      value="45"
-                      percentageChange={8}
-                      Icon={CreditCard}
-                      dataAiHint="subscription growth"
-                    />
+                    <StatCard />
+                    <StatCard />
+                    <StatCard />
+                    <StatCard />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-6 lg:col-span-2">
                 <ExpenseBreakdownTable title="Bank Details" />
                 <ExpenseBreakdownTable title="Credit card details" />
               </div>
-              <div>
+              <div className="lg:col-span-1">
                 <ExpensePieChart />
               </div>
             </div>
