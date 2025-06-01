@@ -40,26 +40,6 @@ export default function DashboardPage() {
                   dataAiHint="expense chart"
                 />
                 <StatCard
-                  title="Active Users"
-                  value="1,250"
-                  percentageChange={12}
-                  Icon={Users}
-                  dataAiHint="user statistics"
-                />
-                <StatCard
-                  title="Pending Orders"
-                  value="78"
-                  percentageChange={-3}
-                  Icon={Activity}
-                  dataAiHint="order status"
-                />
-              </div>
-            </div>
-
-            {/* Second group of StatCards - Wrapped in a grey box */}
-            <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
                   title="New Profit"
                   value="$840"
                   percentageChange={7}
@@ -73,6 +53,26 @@ export default function DashboardPage() {
                   Icon={CreditCard}
                   dataAiHint="bank account"
                 />
+              </div>
+            </div>
+
+            {/* Second group of StatCards - Wrapped in a grey box */}
+            <div className="bg-muted p-4 rounded-lg shadow-md">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                  title="Active Users"
+                  value="1,250"
+                  percentageChange={12}
+                  Icon={Users}
+                  dataAiHint="user statistics"
+                />
+                <StatCard
+                  title="Pending Orders"
+                  value="78"
+                  percentageChange={-3}
+                  Icon={Activity}
+                  dataAiHint="order status"
+                />
                 <StatCard
                   title="Sales Today"
                   value="$1,200"
@@ -84,7 +84,7 @@ export default function DashboardPage() {
                   title="New Subscriptions"
                   value="45"
                   percentageChange={8}
-                  Icon={CreditCard} 
+                  Icon={CreditCard}
                   dataAiHint="subscription growth"
                 />
               </div>
