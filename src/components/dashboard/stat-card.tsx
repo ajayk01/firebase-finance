@@ -14,7 +14,7 @@ interface StatCardProps {
   logoIcon?: LucideIcon;
   bankName?: string;
   accountNumber?: string;
-  currentBalanceText?: string; // New prop for the full balance string
+  currentBalanceText?: string;
 }
 
 export function StatCard({
@@ -28,24 +28,24 @@ export function StatCard({
   accountNumber,
   currentBalanceText,
 }: StatCardProps) {
-  const showBankDetails = isPrimary && (LogoIconComponent || bankName || accountNumber || currentBalanceText);
+  const showBankDetails = !!(LogoIconComponent || bankName || accountNumber || currentBalanceText);
   const showGeneralStats = !showBankDetails && !!(title || value || Icon || percentageChange !== undefined);
 
   return (
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col", 
-      isPrimary ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground",
+      isPrimary && !showBankDetails ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground",
       showBankDetails || showGeneralStats ? "p-4" : ""
     )}>
       {showBankDetails ? (
         <>
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center justify-start gap-3 mb-2">
+            {LogoIconComponent && <LogoIconComponent className="h-8 w-8 text-primary" />}
             {bankName && <h3 className="text-xl font-semibold">{bankName}</h3>}
-            {LogoIconComponent && <LogoIconComponent className="h-8 w-8 text-primary-foreground/80" />}
           </div>
           {currentBalanceText ? (
-            <p className="text-xl font-semibold mt-1">{currentBalanceText}</p>
+            <p className="text-xl font-semibold mt-1 text-emerald-600">{currentBalanceText}</p>
           ) : accountNumber ? (
             <p className="text-2xl font-bold tracking-wider">{accountNumber}</p>
           ) : null}
