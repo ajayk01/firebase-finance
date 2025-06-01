@@ -9,7 +9,7 @@ import { RevenueExpensesChart } from "@/components/dashboard/revenue-expenses-ch
 import { AppointmentsList } from "@/components/dashboard/appointments-list";
 import { ClientTransactionsTable } from "@/components/dashboard/client-transactions-table";
 
-import { Briefcase, Receipt, TrendingUp, WalletCards } from "lucide-react";
+import { Briefcase, Receipt, TrendingUp, WalletCards, Activity, Users, DollarSign, CreditCard } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -49,6 +49,37 @@ export default function DashboardPage() {
                 percentageChange={2}
                 Icon={WalletCards}
                 dataAiHint="bank account"
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Active Users"
+                value="1,250"
+                percentageChange={12}
+                Icon={Users}
+                dataAiHint="user statistics"
+              />
+              <StatCard
+                title="Pending Orders"
+                value="78"
+                percentageChange={-3}
+                Icon={Activity}
+                dataAiHint="order status"
+              />
+              <StatCard
+                title="Sales Today"
+                value="$1,200"
+                percentageChange={15}
+                Icon={DollarSign}
+                dataAiHint="daily sales"
+              />
+              <StatCard
+                title="New Subscriptions"
+                value="45"
+                percentageChange={8}
+                Icon={CreditCard}
+                dataAiHint="subscription growth"
               />
             </div>
 
