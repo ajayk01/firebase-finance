@@ -1,56 +1,94 @@
 
 "use client"
 
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const data = [
-  { name: "Office Software", value: 99.00 },
-  { name: "Marketing", value: 430.00 }, // 250 (Ads) + 180 (Content)
-  { name: "Utilities", value: 225.00 }, // 150 (Electricity) + 75 (Internet)
-  { name: "Office Supplies", value: 165.00 }, // 45 (Stationery) + 120 (Snacks)
-  { name: "Travel", value: 130.00 }, // 80 (Client Visit) + 50 (Commute)
-  { name: "Software Tools", value: 49.00 },
+  { name: "House & Utilities", value: 84000 },
+  { name: "Groceries", value: 25000 },
+  { name: "Children/Dependants", value: 20000 },
+  { name: "Finance & Insurance", value: 17300 },
+  { name: "Personal & Medical", value: 15000 },
+  { name: "Transportation", value: 13000 },
+  { name: "Other", value: 9300 }, // Adjusted to make total 183.6K
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8442FF', '#FF5733'];
+const COLORS = ['#3B82F6', '#8B5CF6', '#A78BFA', '#F59E0B', '#EF4444', '#B91C1C', '#DC2626'];
+
+const totalAmount = data.reduce((sum, entry) => sum + entry.value, 0);
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, value, name, fill }: any) => {
+  const sin = Math.sin(-midAngle * RADIAN);
+  const cos = Math.cos(-midAngle * RADIAN);
+  
+  const sx = cx + outerRadius * cos;
+  const sy = cy + outerRadius * sin;
+  const mx = cx + (outerRadius + 15) * cos; // Control length of first part of line
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 20; // Control length of horizontal part of line
+  const ey = my;
+  const textAnchor = cos >= 0 ? 'start' : 'end';
+  const labelColor = fill;
+
+  let formattedValue = `$${(value / 1000).toFixed(1)}K`;
+  if (value === 0) formattedValue = '$0K';
+  // Special case for values like 25000 to show $25K instead of $25.0K
+  if (value % 1000 === 0 && value !== 0) {
+    formattedValue = `$${(value / 1000).toFixed(0)}K`;
+  }
+
+
+  return (
+    <g>
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={labelColor} fill="none" strokeWidth={1.5} />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 8} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dominantBaseline="central">
+        <tspan x={ex + (cos >= 0 ? 1 : -1) * 8} dy="-0.5em" className="font-semibold text-sm">
+          {formattedValue}
+        </tspan>
+        <tspan x={ex + (cos >= 0 ? 1 : -1) * 8} dy="1.1em" className="text-xs text-muted-foreground">
+          {name}
+        </tspan>
+      </text>
+    </g>
+  );
+};
 
 export function ExpensePieChart() {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold">Expense Distribution</CardTitle>
+      <CardHeader className="items-center pb-3">
+        <CardTitle className="text-2xl font-bold">Yearly Expense</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">Breakdown By Category</CardDescription>
       </CardHeader>
-      <CardContent className="h-[400px]">
+      <CardContent className="h-[420px] relative"> {/* Adjusted height */}
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 20, right: 50, bottom: 20, left: 50 }}> {/* Added margins for labels */}
             <Pie
               data={data}
               cx="50%"
               cy="50%"
               labelLine={false}
-              outerRadius={120}
+              label={renderCustomizedLabel}
+              outerRadius={110} // Adjusted outerRadius
+              innerRadius={70}  // innerRadius to make it a donut
               fill="#8884d8"
               dataKey="value"
               nameKey="name"
+              paddingAngle={1} // Small padding between slices
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip
-              formatter={(value: number, name: string) => [`$${value.toFixed(2)}`, name]}
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                borderColor: 'hsl(var(--border))',
-                borderRadius: 'var(--radius)',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
-              }}
-              cursor={{ fill: 'hsl(var(--muted))' }}
-            />
-            <Legend iconType="circle" iconSize={10} wrapperStyle={{paddingTop: '10px'}} />
           </PieChart>
         </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <p className="text-3xl font-bold text-foreground">
+            ${(totalAmount / 1000).toFixed(1)}K
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
