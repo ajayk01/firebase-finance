@@ -5,6 +5,7 @@ import { DashboardSidebarContent } from "@/components/dashboard/dashboard-sideba
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table"; 
+import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 
 import { Wallet, Receipt, Coins, CreditCard, Activity, Users, DollarSign } from "lucide-react";
 
@@ -90,9 +91,14 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ExpenseBreakdownTable />
-              <ExpenseBreakdownTable />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <ExpenseBreakdownTable />
+                <ExpenseBreakdownTable />
+              </div>
+              <div>
+                <ExpensePieChart />
+              </div>
             </div>
             
           </main>
