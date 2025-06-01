@@ -6,9 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
-
-// Icons are no longer directly used here, but StatCard might internally if re-enabled.
-// For now, direct imports from lucide-react for page.tsx are not needed for StatCards.
+import { Landmark } from "lucide-react"; // Import the Landmark icon
 
 export default function DashboardPage() {
   return (
@@ -27,7 +25,12 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
                 <div className="bg-muted p-4 rounded-lg shadow-md">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <StatCard isPrimary={true} />
+                    <StatCard
+                      isPrimary={true}
+                      logoIcon={Landmark}
+                      bankName="Global Trust Bank"
+                      accountNumber="•••• •••• •••• 6789"
+                    />
                     <StatCard />
                     <StatCard />
                     <StatCard />
