@@ -9,7 +9,7 @@ import { RevenueExpensesChart } from "@/components/dashboard/revenue-expenses-ch
 import { AppointmentsList } from "@/components/dashboard/appointments-list";
 import { ClientTransactionsTable } from "@/components/dashboard/client-transactions-table";
 
-import { Briefcase, Receipt, TrendingUp, WalletCards, Activity, Users, DollarSign, CreditCard } from "lucide-react";
+import { Wallet, Receipt, Coins, CreditCard, Activity, Users, DollarSign } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -26,7 +26,8 @@ export default function DashboardPage() {
                 title="Total Revenue"
                 value="$689"
                 percentageChange={5}
-                Icon={Briefcase}
+                Icon={Wallet}
+                isPrimary={true}
                 dataAiHint="revenue report"
               />
               <StatCard
@@ -40,14 +41,14 @@ export default function DashboardPage() {
                 title="New Profit"
                 value="$840"
                 percentageChange={7}
-                Icon={TrendingUp}
+                Icon={Coins}
                 dataAiHint="profit graph"
               />
               <StatCard
                 title="Cash Balance"
                 value="$568"
                 percentageChange={2}
-                Icon={WalletCards}
+                Icon={CreditCard}
                 dataAiHint="bank account"
               />
             </div>
@@ -78,7 +79,7 @@ export default function DashboardPage() {
                 title="New Subscriptions"
                 value="45"
                 percentageChange={8}
-                Icon={CreditCard}
+                Icon={CreditCard} // Kept CreditCard for this as it's a common subscription icon
                 dataAiHint="subscription growth"
               />
             </div>
