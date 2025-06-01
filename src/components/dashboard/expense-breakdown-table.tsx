@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 const expenseData = [
   { category: "Office Software", subCategory: "CRM Subscription", expense: "$99.00" },
@@ -32,26 +31,24 @@ export function ExpenseBreakdownTable() {
         <CardTitle className="text-xl font-semibold">Recent Expenses</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] w-full">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="py-3 px-4">Category</TableHead>
-                <TableHead className="py-3 px-4">Sub-category</TableHead>
-                <TableHead className="text-right py-3 px-4">Expense</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="py-3 px-4">Category</TableHead>
+              <TableHead className="py-3 px-4">Sub-category</TableHead>
+              <TableHead className="text-right py-3 px-4">Expense</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {expenseData.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
+                <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
+                <TableCell className="text-right py-3 px-4 text-emerald-600 font-medium">{item.expense}</TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenseData.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
-                  <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
-                  <TableCell className="text-right py-3 px-4 text-emerald-600 font-medium">{item.expense}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
