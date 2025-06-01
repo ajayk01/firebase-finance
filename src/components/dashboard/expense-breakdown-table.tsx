@@ -24,11 +24,15 @@ const expenseData = [
   { category: "Travel", subCategory: "Local Commute Reimbursement", expense: "$50.00" },
 ];
 
-export function ExpenseBreakdownTable() {
+interface ExpenseBreakdownTableProps {
+  title: string;
+}
+
+export function ExpenseBreakdownTable({ title }: ExpenseBreakdownTableProps) {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader>
-        <CardTitle className="text-xl font-semibold">Recent Expenses</CardTitle>
+        <CardTitle className="text-xl font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
