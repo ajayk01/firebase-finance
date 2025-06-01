@@ -23,40 +23,38 @@ export default function DashboardPage() {
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-auto">
             {/* Parent container for the two stat card groups */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* First group of StatCards - Wrapped in a white outer box */}
-              <div className="bg-card p-4 rounded-xl shadow-lg">
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <StatCard
-                      title="Total Revenue"
-                      value="$689"
-                      percentageChange={5}
-                      Icon={Wallet}
-                      isPrimary={true}
-                      dataAiHint="revenue report"
-                    />
-                    <StatCard
-                      title="Total Expenses"
-                      value="$460"
-                      percentageChange={-5}
-                      Icon={Receipt}
-                      dataAiHint="expense chart"
-                    />
-                    <StatCard
-                      title="New Profit"
-                      value="$840"
-                      percentageChange={7}
-                      Icon={Coins}
-                      dataAiHint="profit graph"
-                    />
-                    <StatCard
-                      title="Cash Balance"
-                      value="$568"
-                      percentageChange={2}
-                      Icon={CreditCard}
-                      dataAiHint="bank account"
-                    />
-                  </div>
+              {/* First group of StatCards - Grey inner box directly */}
+              <div className="bg-muted p-4 rounded-lg shadow-md"> {/* Removed outer white box */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <StatCard
+                    title="Total Revenue"
+                    value="$689"
+                    percentageChange={5}
+                    Icon={Wallet}
+                    isPrimary={true}
+                    dataAiHint="revenue report"
+                  />
+                  <StatCard
+                    title="Total Expenses"
+                    value="$460"
+                    percentageChange={-5}
+                    Icon={Receipt}
+                    dataAiHint="expense chart"
+                  />
+                  <StatCard
+                    title="New Profit"
+                    value="$840"
+                    percentageChange={7}
+                    Icon={Coins}
+                    dataAiHint="profit graph"
+                  />
+                  <StatCard
+                    title="Cash Balance"
+                    value="$568"
+                    percentageChange={2}
+                    Icon={CreditCard}
+                    dataAiHint="bank account"
+                  />
                 </div>
               </div>
 
