@@ -23,7 +23,7 @@ export default function DashboardPage() {
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-auto">
             {/* First group of StatCards - Wrapped in a grey box */}
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <StatCard
                   title="Total Revenue"
                   value="$689"
@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
             {/* Second group of StatCards - Wrapped in a grey box */}
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <StatCard
                   title="Active Users"
                   value="1,250"
