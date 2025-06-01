@@ -21,8 +21,8 @@ export default function DashboardPage() {
         <SidebarInset className="flex flex-col !p-0">
           <DashboardHeader />
           <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-auto">
-            {/* Parent container for the two stat card groups */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Parent container for the two stat card groups - now with white background */}
+            <div className="bg-card p-6 rounded-xl shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* First group of StatCards - Wrapped in a grey box */}
               <div className="bg-muted p-4 rounded-lg shadow-md">
                 <div className="grid gap-4 md:grid-cols-2">
