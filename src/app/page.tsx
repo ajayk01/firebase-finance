@@ -87,28 +87,51 @@ const masterIncomeData = [
   { year: 2023, month: "jul", category: "Consulting Services", subCategory: "Old Client Z", expense: "₹6000.00" },
 ];
 
+const masterInvestmentData = [
+  // July 2024 Investments
+  { year: 2024, month: "jul", category: "Stocks", subCategory: "Tech Stocks ETF", expense: "₹5000.00" },
+  { year: 2024, month: "jul", category: "Mutual Funds", subCategory: "Balanced Fund", expense: "₹3000.00" },
+  { year: 2024, month: "jul", category: "Real Estate", subCategory: "REIT Investment", expense: "₹10000.00" },
+  // June 2024 Investments
+  { year: 2024, month: "jun", category: "Stocks", subCategory: "Blue Chip Stocks", expense: "₹7000.00" },
+  { year: 2024, month: "jun", category: "Bonds", subCategory: "Government Bonds", expense: "₹4000.00" },
+  // July 2023 Investments
+  { year: 2023, month: "jul", category: "Mutual Funds", subCategory: "Index Fund", expense: "₹2500.00" },
+  { year: 2023, month: "jul", category: "Stocks", subCategory: "Pharma Stock", expense: "₹6000.00" },
+  // August 2023
+  { year: 2023, month: "aug", category: "Crypto", subCategory: "Bitcoin", expense: "₹1500.00" },
+];
+
 
 const parseCurrency = (currencyStr: string): number => {
   if (!currencyStr) return 0;
   return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
 };
 
-const getAvailableYears = (data: typeof masterExpenseData) => {
+const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory: string, expense: string }>) => {
   const uniqueYears = Array.from(new Set(data.map(item => item.year)))
     .sort((a, b) => b - a); // Sort descending
   return uniqueYears.map(year => ({ value: year, label: year.toString() }));
 };
 
 export default function DashboardPage() {
+  // Expense States
   const availableExpenseYears = useMemo(() => getAvailableYears(masterExpenseData), []);
   const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
   const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(availableExpenseYears[0]?.value || new Date().getFullYear());
 
+  // Income States
   const availableIncomeYears = useMemo(() => getAvailableYears(masterIncomeData), []);
   const [selectedIncomeMonth, setSelectedIncomeMonth] = useState<string>("jul");
   const [selectedIncomeYear, setSelectedIncomeYear] = useState<number>(availableIncomeYears[0]?.value || new Date().getFullYear());
 
+  // Investment States
+  const availableInvestmentYears = useMemo(() => getAvailableYears(masterInvestmentData), []);
+  const [selectedInvestmentMonth, setSelectedInvestmentMonth] = useState<string>("jul");
+  const [selectedInvestmentYear, setSelectedInvestmentYear] = useState<number>(availableInvestmentYears[0]?.value || new Date().getFullYear());
 
+
+  // Expense Data Processing
   const currentMonthExpenseTableData = useMemo(() => {
     return masterExpenseData.filter(item => item.month === selectedExpenseMonth && item.year === selectedExpenseYear);
   }, [selectedExpenseMonth, selectedExpenseYear]);
@@ -127,6 +150,7 @@ export default function DashboardPage() {
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [selectedExpenseMonth, selectedExpenseYear]);
 
+  // Income Data Processing
   const currentMonthIncomeTableData = useMemo(() => {
     return masterIncomeData.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
   }, [selectedIncomeMonth, selectedIncomeYear]);
@@ -135,7 +159,7 @@ export default function DashboardPage() {
     const monthlyIncome = masterIncomeData.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
     const aggregated: { [key: string]: number } = {};
     monthlyIncome.forEach(item => {
-      const value = parseCurrency(item.expense); // 'expense' field is used for amount
+      const value = parseCurrency(item.expense); 
       if (aggregated[item.category]) {
         aggregated[item.category] += value;
       } else {
@@ -144,6 +168,25 @@ export default function DashboardPage() {
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [selectedIncomeMonth, selectedIncomeYear]);
+
+  // Investment Data Processing
+  const currentMonthInvestmentTableData = useMemo(() => {
+    return masterInvestmentData.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
+  }, [selectedInvestmentMonth, selectedInvestmentYear]);
+
+  const currentMonthInvestmentPieData = useMemo(() => {
+    const monthlyInvestment = masterInvestmentData.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
+    const aggregated: { [key: string]: number } = {};
+    monthlyInvestment.forEach(item => {
+      const value = parseCurrency(item.expense);
+      if (aggregated[item.category]) {
+        aggregated[item.category] += value;
+      } else {
+        aggregated[item.category] = value;
+      }
+    });
+    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
+  }, [selectedInvestmentMonth, selectedInvestmentYear]);
 
 
   return (
@@ -269,8 +312,38 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Investment Details
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <ExpenseBreakdownTable
+                title="Investment Breakdown"
+                selectedMonth={selectedInvestmentMonth}
+                onMonthChange={setSelectedInvestmentMonth}
+                months={monthOptions}
+                selectedYear={selectedInvestmentYear}
+                onYearChange={setSelectedInvestmentYear}
+                years={availableInvestmentYears}
+                data={currentMonthInvestmentTableData}
+                amountColumnHeaderText="Investment"
+                amountColumnItemTextColorClassName="text-primary font-medium"
+                categoryTotalTextColorClassName="text-primary font-semibold"
+                grandTotalTextColorClassName="text-primary"
+              />
+            </div>
+            <div>
+              <ExpensePieChart 
+                data={currentMonthInvestmentPieData}
+                chartTitle="Selected Month Investments"
+                chartDescription="Breakdown By Category"
+              />
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
 }
-
