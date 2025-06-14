@@ -1,7 +1,9 @@
 import type {NextConfig} from 'next';
-
+const repoName = 'firebase-finance';
 const nextConfig: NextConfig = {
   output: 'export',
+  basePath: `/${repoName}`,
+  assetPrefix: `/${repoName}/`,
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
