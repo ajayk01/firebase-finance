@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
-import { Landmark } from "lucide-react";
+import { Landmark, CreditCard } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -51,21 +51,41 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-semibold mb-3">Credit card details</h2>
                 <div className="bg-muted p-4 rounded-lg shadow-md">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <StatCard />
-                    <StatCard />
-                    <StatCard />
-                    <StatCard />
+                    <StatCard
+                      creditCardLogoIcon={CreditCard}
+                      creditCardName="Visa Platinum"
+                      usedAmountText="Used : 15,000"
+                      totalLimitText="Total Limit : 75,000"
+                    />
+                    <StatCard
+                      creditCardLogoIcon={CreditCard}
+                      creditCardName="Mastercard Gold"
+                      usedAmountText="Used : 22,500"
+                      totalLimitText="Total Limit : 1,00,000"
+                    />
+                    <StatCard
+                      creditCardLogoIcon={CreditCard}
+                      creditCardName="Amex Rewards"
+                      usedAmountText="Used : 8,200"
+                      totalLimitText="Total Limit : 50,000"
+                    />
+                    <StatCard
+                      creditCardLogoIcon={CreditCard}
+                      creditCardName="Discover It"
+                      usedAmountText="Used : 31,000"
+                      totalLimitText="Total Limit : 1,20,000"
+                    />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-6 lg:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-6">
                 <ExpenseBreakdownTable title="Bank Details" />
                 <ExpenseBreakdownTable title="Credit card details" />
               </div>
-              <div className="lg:col-span-1">
+              <div className="md:col-span-1">
                 <ExpensePieChart />
               </div>
             </div>

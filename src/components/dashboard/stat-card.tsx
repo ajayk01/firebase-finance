@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUp, ArrowDown } from "lucide-react"; // Keep ArrowUp/Down for general stats case
+import { ArrowUp, ArrowDown, CreditCard as DefaultCreditCardIcon } from "lucide-react"; // Keep ArrowUp/Down for general stats case
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
@@ -9,12 +9,19 @@ interface StatCardProps {
   value?: string;
   percentageChange?: number;
   Icon?: LucideIcon;
-  isPrimary?: boolean;
+  isPrimary?: boolean; // Retained for potential future use or different card types
   dataAiHint?: string;
-  logoIcon?: LucideIcon;
+
+  // Bank details props
+  logoIcon?: LucideIcon; // Used for bank logo
   bankName?: string;
-  accountNumber?: string;
-  currentBalanceText?: string;
+  currentBalanceText?: string; // e.g., "Current Balance : 600000"
+
+  // Credit card details props
+  creditCardLogoIcon?: LucideIcon;
+  creditCardName?: string;
+  usedAmountText?: string; // e.g., "Used : 15000"
+  totalLimitText?: string; // e.g., "Total Limit : 75000"
 }
 
 export function StatCard({
@@ -22,26 +29,60 @@ export function StatCard({
   value,
   percentageChange,
   Icon,
-  isPrimary = false, // This prop seems unused now for bank details card styling
-  logoIcon: LogoIconComponent,
+  isPrimary = false,
+  logoIcon: BankLogoIconComponent,
   bankName,
-  accountNumber,
   currentBalanceText,
+  creditCardLogoIcon: CreditCardLogoIconComponent = DefaultCreditCardIcon,
+  creditCardName,
+  usedAmountText,
+  totalLimitText,
 }: StatCardProps) {
-  const showBankDetails = !!(LogoIconComponent || bankName || accountNumber || currentBalanceText);
-  const showGeneralStats = !showBankDetails && !!(title || value || Icon || percentageChange !== undefined);
+  const showBankDetails = !!(BankLogoIconComponent || bankName || currentBalanceText);
+  const showCreditCardDetails = !!(CreditCardLogoIconComponent || creditCardName || usedAmountText || totalLimitText);
+  const showGeneralStats = !showBankDetails && !showCreditCardDetails && !!(title || value || Icon || percentageChange !== undefined);
+
+  const parseTextAndAmount = (textWithAmount: string | undefined) => {
+    if (!textWithAmount) return { label: '', amount: '' };
+    const parts = textWithAmount.split(' : ');
+    return {
+      label: parts[0] ? `${parts[0]} :` : '',
+      amount: parts[1] || '',
+    };
+  };
+
+  const usedDetails = parseTextAndAmount(usedAmountText);
+  const limitDetails = parseTextAndAmount(totalLimitText);
 
   return (
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col",
-      "bg-card text-card-foreground", // Default background for all cards now
-      showBankDetails || showGeneralStats ? "p-4" : ""
+      "bg-card text-card-foreground p-4" // Default padding for all content cards
     )}>
-      {showBankDetails ? (
+      {showCreditCardDetails ? (
+        <>
+          <div className="flex items-center justify-start gap-3 mb-3">
+            {CreditCardLogoIconComponent && <CreditCardLogoIconComponent className="h-7 w-7 text-primary" />}
+            {creditCardName && <h3 className="text-lg font-semibold text-foreground">{creditCardName}</h3>}
+          </div>
+          {usedAmountText && (
+            <p className="text-base font-medium mt-1">
+              <span className="text-red-600">{usedDetails.label} </span>
+              <span className="text-foreground">₹{usedDetails.amount}</span>
+            </p>
+          )}
+          {totalLimitText && (
+            <p className="text-base font-medium mt-1">
+              <span className="text-green-500">{limitDetails.label} </span>
+              <span className="text-foreground">₹{limitDetails.amount}</span>
+            </p>
+          )}
+        </>
+      ) : showBankDetails ? (
         <>
           <div className="flex items-center justify-start gap-3 mb-2">
-            {LogoIconComponent && <LogoIconComponent className="h-8 w-8 text-primary" />}
+            {BankLogoIconComponent && <BankLogoIconComponent className="h-8 w-8 text-primary" />}
             {bankName && <h3 className="text-lg font-semibold text-foreground">{bankName}</h3>}
           </div>
           {currentBalanceText ? (
@@ -56,8 +97,6 @@ export function StatCard({
                 </p>
               );
             })()
-          ) : accountNumber ? (
-            <p className="text-2xl font-bold tracking-wider text-foreground">{accountNumber}</p>
           ) : null}
         </>
       ) : showGeneralStats ? (
