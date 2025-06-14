@@ -4,7 +4,8 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
-import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart"; // New import
+import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
+import { MonthlyMoneyTable } from "@/components/dashboard/monthly-money-table";
 import { Landmark, CreditCard } from "lucide-react";
 import { useState, useMemo } from 'react';
 
@@ -139,7 +140,7 @@ export default function DashboardPage() {
   const [selectedInvestmentMonth, setSelectedInvestmentMonth] = useState<string>("jul");
   const [selectedInvestmentYear, setSelectedInvestmentYear] = useState<number>(availableInvestmentYears[0]?.value || new Date().getFullYear());
 
-  // Summary Chart States
+  // Summary Chart & Table States
   const allYearsFromAllData = useMemo(() => [
     ...new Set([
       ...masterExpenseData.map(d => d.year),
@@ -147,8 +148,8 @@ export default function DashboardPage() {
       ...masterInvestmentData.map(d => d.year),
     ])
   ].sort((a,b) => b - a), []);
-  const availableSummaryChartYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
-  const [selectedSummaryChartYear, setSelectedSummaryChartYear] = useState<number>(availableSummaryChartYears[0]?.value || new Date().getFullYear());
+  const availableSummaryYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
+  const [selectedSummaryYear, setSelectedSummaryYear] = useState<number>(availableSummaryYears[0]?.value || new Date().getFullYear());
 
 
   // Expense Data Processing
@@ -208,31 +209,43 @@ export default function DashboardPage() {
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [selectedInvestmentMonth, selectedInvestmentYear]);
 
-  // Monthly Summary Chart Data Processing
-  const monthlySummaryChartData = useMemo(() => {
+  // Monthly Summary Data Processing (for Chart and new Table)
+  const monthlySummaryData = useMemo(() => {
+    const placeholderStartingBalance = 50000; 
     return monthOptions.map(monthObj => {
       const month = monthObj.value;
   
-      const totalExpense = masterExpenseData
-        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+      const currentYearTotalExpense = masterExpenseData
+        .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
   
-      const totalIncome = masterIncomeData
-        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+      const currentYearTotalIncome = masterIncomeData
+        .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
   
-      const totalInvestment = masterInvestmentData
-        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+      const currentYearTotalInvestment = masterInvestmentData
+        .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
   
       return {
-        month: monthObj.label.substring(0, 3), // Short month name e.g., "Jan"
-        expense: totalExpense,
-        income: totalIncome,
-        investment: totalInvestment,
+        month: monthObj.label, 
+        monthShort: monthObj.label.substring(0, 3),
+        totalExpense: currentYearTotalExpense,
+        totalIncome: currentYearTotalIncome,
+        totalInvestment: currentYearTotalInvestment,
+        startingBankBalance: placeholderStartingBalance, 
       };
     });
-  }, [selectedSummaryChartYear]);
+  }, [selectedSummaryYear]);
+
+  const monthlyChartFormattedData = useMemo(() => {
+    return monthlySummaryData.map(d => ({
+      month: d.monthShort,
+      expense: d.totalExpense,
+      income: d.totalIncome,
+      investment: d.totalInvestment,
+    }));
+  }, [monthlySummaryData]);
 
 
   return (
@@ -397,13 +410,27 @@ export default function DashboardPage() {
             Monthly Financial Summary
           </h2>
           <MonthlySummaryChart
-            data={monthlySummaryChartData}
-            selectedYear={selectedSummaryChartYear}
-            onYearChange={setSelectedSummaryChartYear}
-            years={availableSummaryChartYears}
+            data={monthlyChartFormattedData}
+            selectedYear={selectedSummaryYear}
+            onYearChange={setSelectedSummaryYear}
+            years={availableSummaryYears}
           />
         </div>
+
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Monthly Money Table
+          </h2>
+          <MonthlyMoneyTable
+            data={monthlySummaryData}
+            selectedYear={selectedSummaryYear}
+            onYearChange={setSelectedSummaryYear}
+            years={availableSummaryYears}
+          />
+        </div>
+
       </main>
     </div>
   );
 }
+
