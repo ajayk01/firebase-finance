@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUp, ArrowDown, CreditCard as DefaultCreditCardIcon } from "lucide-react"; // Keep ArrowUp/Down for general stats case
+import { ArrowUp, ArrowDown, CreditCard as DefaultCreditCardIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
@@ -9,38 +9,46 @@ interface StatCardProps {
   value?: string;
   percentageChange?: number;
   Icon?: LucideIcon;
-  isPrimary?: boolean; // Retained for potential future use or different card types
+  isPrimary?: boolean;
   dataAiHint?: string;
 
-  // Bank details props
-  logoIcon?: LucideIcon; // Used for bank logo
+  logoIcon?: LucideIcon;
   bankName?: string;
-  currentBalanceText?: string; // e.g., "Current Balance : 600000"
+  currentBalanceText?: string;
 
-  // Credit card details props
   creditCardLogoIcon?: LucideIcon;
   creditCardName?: string;
-  usedAmountText?: string; // e.g., "Used : 15000"
-  totalLimitText?: string; // e.g., "Total Limit : 75000"
+  usedAmountText?: string;
+  totalLimitText?: string;
 }
 
-export function StatCard({
-  title,
-  value,
-  percentageChange,
-  Icon,
-  isPrimary = false,
-  logoIcon: BankLogoIconComponent,
-  bankName,
-  currentBalanceText,
-  creditCardLogoIcon: CreditCardLogoIconComponent = DefaultCreditCardIcon,
-  creditCardName,
-  usedAmountText,
-  totalLimitText,
-}: StatCardProps) {
-  const showBankDetails = !!(BankLogoIconComponent || bankName || currentBalanceText);
-  const showCreditCardDetails = !!(CreditCardLogoIconComponent || creditCardName || usedAmountText || totalLimitText);
+export function StatCard(props: StatCardProps) {
+  const {
+    title,
+    value,
+    percentageChange,
+    Icon,
+    isPrimary = false,
+    logoIcon: BankLogoIconComponent,
+    bankName,
+    currentBalanceText,
+    creditCardLogoIcon: CreditCardLogoIconComponent = DefaultCreditCardIcon,
+    creditCardName,
+    usedAmountText,
+    totalLimitText,
+  } = props;
+
+  const showCreditCardDetails = !!(
+    (CreditCardLogoIconComponent && CreditCardLogoIconComponent !== DefaultCreditCardIcon) ||
+    creditCardName ||
+    usedAmountText ||
+    totalLimitText ||
+    props.creditCardLogoIcon // This check is now valid
+  );
+
+  const showBankDetails = !showCreditCardDetails && !!(BankLogoIconComponent || bankName || currentBalanceText);
   const showGeneralStats = !showBankDetails && !showCreditCardDetails && !!(title || value || Icon || percentageChange !== undefined);
+
 
   const parseTextAndAmount = (textWithAmount: string | undefined) => {
     if (!textWithAmount) return { label: '', amount: '' };
@@ -58,7 +66,7 @@ export function StatCard({
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col",
-      "bg-card text-card-foreground p-4" // Default padding for all content cards
+      "bg-card text-card-foreground p-4"
     )}>
       {showCreditCardDetails ? (
         <>
@@ -144,7 +152,7 @@ export function StatCard({
           </CardContent>
         </>
       ) : (
-        null
+        null // Render nothing if no specific content type matches
       )}
     </Card>
   );
