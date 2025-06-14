@@ -93,7 +93,7 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <p className="text-3xl font-bold text-foreground">
+              <p className="text-3xl font-bold text-foreground -translate-y-3">
                 ₹{(totalAmount / 1000).toFixed(1)}K
               </p>
             </div>
