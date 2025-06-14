@@ -61,11 +61,11 @@ export function MonthlyMoneyTable({
 }: MonthlyMoneyTableProps) {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-x-2 pb-4">
+      <CardHeader className="flex flex-col items-start gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
         <CardTitle className="text-xl font-semibold whitespace-nowrap">
           Month Netflow
         </CardTitle>
-        <div className="flex space-x-2 min-w-[180px] flex-shrink-0">
+        <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-x-2 sm:space-y-0 sm:w-auto sm:min-w-[180px] flex-shrink-0">
           <Select value={selectedMonth} onValueChange={onMonthChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select month" />
@@ -126,4 +126,3 @@ export function MonthlyMoneyTable({
     </Card>
   );
 }
-

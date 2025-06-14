@@ -74,7 +74,7 @@ export function ExpensePieChart({
         <CardTitle className="text-2xl font-bold">{chartTitle}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">{chartDescription}</CardDescription>
       </CardHeader>
-      <CardContent className="h-[380px] relative">
+      <CardContent className="h-[320px] sm:h-[380px] relative">
         {chartData.length > 0 ? (
           <>
             <ResponsiveContainer width="100%" height="100%">
