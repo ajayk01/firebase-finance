@@ -201,13 +201,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-
-            <div>
-              <ExpenseBreakdownTable title="Credit card transaction details" 
-                data={masterExpenseData.filter(item => item.month === "jul" && item.year === 2024)} // Default to July 2024 or pass relevant data
-              />
-            </div>
-
           </main>
         </SidebarInset>
       </div>
