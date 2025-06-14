@@ -1,7 +1,7 @@
 
 "use client"
 
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const data = [
@@ -61,7 +61,7 @@ export function ExpensePieChart() {
         <CardTitle className="text-2xl font-bold">Selected Month expense</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Breakdown By Category</CardDescription>
       </CardHeader>
-      <CardContent className="h-[480px] relative"> {/* Increased height for legend */}
+      <CardContent className="h-[380px] relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 20, right: 50, bottom: 20, left: 50 }}>
             <Pie
@@ -81,12 +81,7 @@ export function ExpensePieChart() {
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Legend
-              verticalAlign="bottom"
-              wrapperStyle={{ lineHeight: '24px', paddingTop: '10px' }}
-              iconSize={10}
-              iconType="circle"
-            />
+            {/* Legend removed */}
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -98,3 +93,4 @@ export function ExpensePieChart() {
     </Card>
   );
 }
+
