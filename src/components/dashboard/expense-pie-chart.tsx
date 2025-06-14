@@ -1,7 +1,7 @@
 
 "use client"
 
-import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const data = [
@@ -11,7 +11,7 @@ const data = [
   { name: "Finance & Insurance", value: 17300 },
   { name: "Personal & Medical", value: 15000 },
   { name: "Transportation", value: 13000 },
-  { name: "Other", value: 9300 }, // Adjusted to make total 183.6K
+  { name: "Other", value: 9300 }, 
 ];
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#A78BFA', '#F59E0B', '#EF4444', '#B91C1C', '#DC2626'];
@@ -25,16 +25,15 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   
   const sx = cx + outerRadius * cos;
   const sy = cy + outerRadius * sin;
-  const mx = cx + (outerRadius + 15) * cos; // Control length of first part of line
+  const mx = cx + (outerRadius + 15) * cos; 
   const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 20; // Control length of horizontal part of line
+  const ex = mx + (cos >= 0 ? 1 : -1) * 20; 
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
   const labelColor = fill;
 
   let formattedValue = `₹${(value / 1000).toFixed(1)}K`;
   if (value === 0) formattedValue = '₹0K';
-  // Special case for values like 25000 to show ₹25K instead of ₹25.0K
   if (value % 1000 === 0 && value !== 0) {
     formattedValue = `₹${(value / 1000).toFixed(0)}K`;
   }
@@ -62,26 +61,32 @@ export function ExpensePieChart() {
         <CardTitle className="text-2xl font-bold">Selected Month expense</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Breakdown By Category</CardDescription>
       </CardHeader>
-      <CardContent className="h-[420px] relative"> {/* Adjusted height */}
+      <CardContent className="h-[480px] relative"> {/* Increased height for legend */}
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 20, right: 50, bottom: 20, left: 50 }}> {/* Added margins for labels */}
+          <PieChart margin={{ top: 20, right: 50, bottom: 20, left: 50 }}>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
               labelLine={false}
               label={renderCustomizedLabel}
-              outerRadius={110} // Adjusted outerRadius
-              innerRadius={70}  // innerRadius to make it a donut
+              outerRadius={110} 
+              innerRadius={70}  
               fill="#8884d8"
               dataKey="value"
               nameKey="name"
-              paddingAngle={1} // Small padding between slices
+              paddingAngle={1}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
+            <Legend 
+              verticalAlign="bottom" 
+              wrapperStyle={{ lineHeight: '24px', paddingTop: '10px' }} 
+              iconSize={10}
+              iconType="circle"
+            />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
