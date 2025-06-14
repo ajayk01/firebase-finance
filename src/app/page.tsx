@@ -424,8 +424,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-4">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-10 gap-6">
+          <div className="lg:col-span-7">
             <h2 className="text-xl font-semibold mb-4">
               Monthly Financial Summary Chart
             </h2>
@@ -436,7 +436,7 @@ export default function DashboardPage() {
               years={availableSummaryYears}
             />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <h2 className="text-xl font-semibold mb-4">
               Selected Month Financial Snapshot
             </h2>
@@ -456,3 +456,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
