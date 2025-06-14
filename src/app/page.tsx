@@ -8,7 +8,8 @@ import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { Landmark, CreditCard } from "lucide-react";
 import { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select components are no longer directly used here for month selection, but kept if other selects exist.
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const months = [
   { value: "jan", label: "January" },
@@ -100,35 +101,26 @@ export default function DashboardPage() {
             </div>
 
             <div> {/* Expenses Section Wrapper */}
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">
-                  Expenses - {months.find(m => m.value === selectedMonth)?.label || 'Select Month'}
-                </h2>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <h2 className="text-xl font-semibold mb-4">
+                Monthly Expenses Overview
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <ExpenseBreakdownTable title="Breakdown" />
+                  <ExpenseBreakdownTable
+                    title="Expense Breakdown"
+                    selectedMonth={selectedMonth}
+                    onMonthChange={setSelectedMonth}
+                    months={months}
+                  />
                 </div>
                 <div>
-                  <ExpensePieChart />
+                  <ExpensePieChart selectedMonth={selectedMonth} />
                 </div>
               </div>
             </div>
 
             <div>
-              <ExpenseBreakdownTable title="Credit card details" />
+              <ExpenseBreakdownTable title="Credit card transaction details" />
             </div>
 
           </main>
