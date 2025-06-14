@@ -438,7 +438,7 @@ export default function DashboardPage() {
           </div>
           <div className="lg:col-span-3">
             <h2 className="text-xl font-semibold mb-4">
-              Selected Month Financial Snapshot
+              Month Netflow
             </h2>
             <MonthlyMoneyTable
               data={financialSnapshotTableData}
