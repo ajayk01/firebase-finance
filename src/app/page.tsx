@@ -7,8 +7,27 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { Landmark, CreditCard } from "lucide-react";
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const months = [
+  { value: "jan", label: "January" },
+  { value: "feb", label: "February" },
+  { value: "mar", label: "March" },
+  { value: "apr", label: "April" },
+  { value: "may", label: "May" },
+  { value: "jun", label: "June" },
+  { value: "jul", label: "July" },
+  { value: "aug", label: "August" },
+  { value: "sep", label: "September" },
+  { value: "oct", label: "October" },
+  { value: "nov", label: "November" },
+  { value: "dec", label: "December" },
+];
 
 export default function DashboardPage() {
+  const [selectedMonth, setSelectedMonth] = useState<string>("jul");
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full">
@@ -80,12 +99,31 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <ExpenseBreakdownTable title="Expenses" />
+            <div> {/* Expenses Section Wrapper */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Expenses - {months.find(m => m.value === selectedMonth)?.label || 'Select Month'}
+                </h2>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <ExpensePieChart />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <ExpenseBreakdownTable title="Breakdown" />
+                </div>
+                <div>
+                  <ExpensePieChart />
+                </div>
               </div>
             </div>
 
