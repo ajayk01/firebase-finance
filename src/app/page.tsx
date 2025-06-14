@@ -24,14 +24,25 @@ export default function DashboardPage() {
                 <div className="bg-muted p-4 rounded-lg shadow-md">
                   <div className="grid gap-4 md:grid-cols-2">
                     <StatCard
-                      isPrimary={true}
                       logoIcon={Landmark}
                       bankName="Global Trust Bank"
                       currentBalanceText="Current Balance : 60,0000"
                     />
-                    <StatCard />
-                    <StatCard />
-                    <StatCard />
+                    <StatCard
+                      logoIcon={Landmark}
+                      bankName="Global Trust Bank"
+                      currentBalanceText="Current Balance : 60,0000"
+                    />
+                    <StatCard
+                      logoIcon={Landmark}
+                      bankName="Global Trust Bank"
+                      currentBalanceText="Current Balance : 60,0000"
+                    />
+                    <StatCard
+                      logoIcon={Landmark}
+                      bankName="Global Trust Bank"
+                      currentBalanceText="Current Balance : 60,0000"
+                    />
                   </div>
                 </div>
               </div>
