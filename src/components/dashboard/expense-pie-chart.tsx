@@ -20,13 +20,17 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   const textAnchor = cos >= 0 ? 'start' : 'end';
   const labelColor = fill;
 
-  let formattedValue = `₹${(value / 1000).toFixed(1)}K`;
-  if (value === 0) formattedValue = '₹0K';
-  if (value % 1000 === 0 && value !== 0) {
+  let formattedValue: string;
+  if (value === 0) {
+    formattedValue = '₹0';
+  } else if (value < 1000) {
+    formattedValue = `₹${value.toFixed(0)}`;
+  } else if (value % 1000 === 0) {
     formattedValue = `₹${(value / 1000).toFixed(0)}K`;
+  } else {
+    formattedValue = `₹${(value / 1000).toFixed(1)}K`;
   }
-  // Ensure very small percentages (which might have NaN or Infinity values for label position if outerRadius is small)
-  // or zero values don't render labels that might break layout.
+  
   if (percent < 0.03 || !isFinite(sx) || !isFinite(sy)) return null;
 
 
@@ -105,3 +109,4 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
     </Card>
   );
 }
+
