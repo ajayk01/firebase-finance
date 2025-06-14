@@ -6,8 +6,8 @@ import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
 import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
-import { Landmark, CreditCard } from "lucide-react";
-import { useState, useMemo } from 'react';
+import { Landmark, CreditCard, AlertCircle } from "lucide-react";
+import { useState, useMemo, useEffect } from 'react';
 
 const monthOptions = [
   { value: "jan", label: "January" },
@@ -112,13 +112,18 @@ const masterInvestmentData = [
   { year: 2023, month: "aug", category: "Crypto", subCategory: "Bitcoin", expense: "₹1500.00" },
 ];
 
-const bankAccountDetails = [
-  { id: 'bank1', name: "Global Trust Bank (Savings)", balance: 600000, icon: Landmark },
-  { id: 'bank2', name: "Global Trust Bank (Current)", balance: 125000, icon: Landmark },
-  { id: 'bank3', name: "City Commercial Bank", balance: 350000, icon: Landmark },
-  { id: 'bank4', name: "National Cooperative", balance: 85000, icon: Landmark },
-];
+interface BankAccount {
+  id: string;
+  name: string;
+  balance: number;
+}
 
+interface CreditCardAccount {
+  id: string;
+  name: string;
+  usedAmount: number;
+  totalLimit: number;
+}
 
 const parseCurrency = (currencyStr: string): number => {
   if (!currencyStr) return 0;
@@ -132,6 +137,37 @@ const getAvailableYears = (data: Array<{year: number, month: string, category: s
 };
 
 export default function DashboardPage() {
+  // API Data States
+  const [apiBankAccounts, setApiBankAccounts] = useState<BankAccount[]>([]);
+  const [apiCreditCards, setApiCreditCards] = useState<CreditCardAccount[]>([]);
+  const [isFinancialDetailsLoading, setIsFinancialDetailsLoading] = useState<boolean>(true);
+  const [financialDetailsError, setFinancialDetailsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchFinancialDetails() {
+      setIsFinancialDetailsLoading(true);
+      setFinancialDetailsError(null);
+      try {
+        const response = await fetch('/api/financial-details');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setApiBankAccounts(data.bankAccounts || []);
+        setApiCreditCards(data.creditCards || []);
+      } catch (error) {
+        console.error("Failed to fetch financial details:", error);
+        setFinancialDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
+        setApiBankAccounts([]);
+        setApiCreditCards([]);
+      } finally {
+        setIsFinancialDetailsLoading(false);
+      }
+    }
+    fetchFinancialDetails();
+  }, []);
+
+
   // Expense States
   const availableExpenseYears = useMemo(() => getAvailableYears(masterExpenseData), []);
   const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
@@ -258,7 +294,7 @@ export default function DashboardPage() {
       .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
       .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
-    const totalBankBalance = bankAccountDetails.reduce((sum, acc) => sum + acc.balance, 0);
+    const totalBankBalance = apiBankAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
     const netFlows = incomeForSelectedMonth - expenseForSelectedMonth - investmentForSelectedMonth;
     
@@ -276,7 +312,7 @@ export default function DashboardPage() {
       { category: "Total Bank Balance", amount: totalBankBalance, colorClassName: "text-foreground font-medium" },
       { category: "Total Netflows", amount: netFlows, colorClassName: `${netFlowsColorClass} font-medium` },
     ] as FinancialSnapshotItem[];
-  }, [selectedSummaryDetailMonth, selectedSummaryYear]);
+  }, [selectedSummaryDetailMonth, selectedSummaryYear, apiBankAccounts]);
 
 
   return (
@@ -287,48 +323,57 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2">
-                {bankAccountDetails.map((account) => (
-                  <StatCard
-                    key={account.id}
-                    logoIcon={account.icon}
-                    bankName={account.name}
-                    currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
-                  />
-                ))}
-              </div>
+              {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading bank details...</p>}
+              {financialDetailsError && (
+                <div className="text-red-600 flex items-center justify-center p-4">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  Error loading bank details: {financialDetailsError}
+                </div>
+              )}
+              {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length === 0 && (
+                <p className="text-center text-muted-foreground">No bank accounts found.</p>
+              )}
+              {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {apiBankAccounts.map((account) => (
+                    <StatCard
+                      key={account.id}
+                      logoIcon={Landmark} // Hardcoded for now
+                      bankName={account.name}
+                      currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-3">Credit card details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              <div className="grid gap-4 md:grid-cols-2">
-                <StatCard
-                  creditCardLogoIcon={CreditCard}
-                  creditCardName="Visa Platinum"
-                  usedAmountText="Used : 15,000"
-                  totalLimitText="Total Limit : 75,000"
-                />
-                <StatCard
-                  creditCardLogoIcon={CreditCard}
-                  creditCardName="Mastercard Gold"
-                  usedAmountText="Used : 22,500"
-                  totalLimitText="Total Limit : 1,00,000"
-                />
-                <StatCard
-                  creditCardLogoIcon={CreditCard}
-                  creditCardName="Amex Rewards"
-                  usedAmountText="Used : 8,200"
-                  totalLimitText="Total Limit : 50,000"
-                />
-                <StatCard
-                  creditCardLogoIcon={CreditCard}
-                  creditCardName="Discover It"
-                  usedAmountText="Used : 31,000"
-                  totalLimitText="Total Limit : 1,20,000"
-                />
-              </div>
+              {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading credit card details...</p>}
+              {financialDetailsError && (
+                 <div className="text-red-600 flex items-center justify-center p-4">
+                   <AlertCircle className="h-5 w-5 mr-2" />
+                   Error loading credit card details: {financialDetailsError}
+                 </div>
+              )}
+              {!isFinancialDetailsLoading && !financialDetailsError && apiCreditCards.length === 0 && (
+                 <p className="text-center text-muted-foreground">No credit cards found.</p>
+              )}
+              {!isFinancialDetailsLoading && !financialDetailsError && apiCreditCards.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {apiCreditCards.map((card) => (
+                    <StatCard
+                      key={card.id}
+                      creditCardLogoIcon={CreditCard} // Hardcoded for now
+                      creditCardName={card.name}
+                      usedAmountText={`Used : ${card.usedAmount.toLocaleString('en-IN')}`}
+                      totalLimitText={`Total Limit : ${card.totalLimit.toLocaleString('en-IN')}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -456,4 +501,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
