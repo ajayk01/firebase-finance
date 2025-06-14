@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,7 +18,7 @@ interface ExpenseItem {
   month: string;
   category: string;
   subCategory: string;
-  expense: string;
+  expense: string; // Keep as string from props, parse internally
 }
 
 interface MonthOption {
@@ -29,12 +31,49 @@ interface ExpenseBreakdownTableProps {
   selectedMonth?: string;
   onMonthChange?: (value: string) => void;
   months?: MonthOption[];
-  data: ExpenseItem[]; 
+  data: ExpenseItem[];
 }
 
+interface CategorizedExpenseGroup {
+  categoryName: string;
+  items: ExpenseItem[];
+  categoryTotal: number;
+}
+
+const parseCurrency = (currencyStr: string): number => {
+  if (!currencyStr) return 0;
+  return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
+};
+
 export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, months, data }: ExpenseBreakdownTableProps) {
-  
-  const displayedData = [...data].sort((a, b) => a.category.localeCompare(b.category));
+
+  const { categorizedData, grandTotal } = React.useMemo(() => {
+    if (!data || data.length === 0) {
+      return { categorizedData: [], grandTotal: 0 };
+    }
+
+    const categoriesMap = new Map<string, { items: ExpenseItem[], total: number }>();
+    let calculatedGrandTotal = 0;
+
+    data.forEach(item => {
+      const expenseValue = parseCurrency(item.expense);
+      if (!categoriesMap.has(item.category)) {
+        categoriesMap.set(item.category, { items: [], total: 0 });
+      }
+      const categoryGroup = categoriesMap.get(item.category)!;
+      categoryGroup.items.push(item);
+      categoryGroup.total += expenseValue;
+      calculatedGrandTotal += expenseValue;
+    });
+
+    const sortedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
+      categoryName,
+      items: groupData.items, // Items within a category retain their original order from `data`
+      categoryTotal: groupData.total,
+    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName)); // Sort categories alphabetically
+
+    return { categorizedData: sortedCategorizedData, grandTotal: calculatedGrandTotal };
+  }, [data]);
 
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -67,13 +106,26 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayedData.length > 0 ? (
-              displayedData.map((item, index) => (
-                <TableRow key={`${item.month}-${item.category}-${item.subCategory}-${index}`}>
-                  <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
-                  <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
-                  <TableCell className="text-right py-3 px-4 text-red-600 font-medium">₹{item.expense.replace('₹', '')}</TableCell>
-                </TableRow>
+            {categorizedData.length > 0 ? (
+              categorizedData.map((group) => (
+                <React.Fragment key={group.categoryName}>
+                  {group.items.map((item, itemIndex) => (
+                    <TableRow key={`${item.month}-${item.category}-${item.subCategory}-${itemIndex}`}>
+                      <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
+                      <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
+                      <TableCell className="text-right py-3 px-4 text-red-600 font-medium">
+                        ₹{parseCurrency(item.expense).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/50">
+                    <TableCell className="py-2 px-4 font-semibold"></TableCell>
+                    <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
+                    <TableCell className="text-right py-2 px-4 text-red-700 font-semibold">
+                      ₹{group.categoryTotal.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
               ))
             ) : (
               <TableRow>
@@ -83,6 +135,16 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
               </TableRow>
             )}
           </TableBody>
+          {categorizedData.length > 0 && (
+            <TableFooter>
+              <TableRow className="bg-card font-bold text-base">
+                <TableCell colSpan={2} className="text-right py-3 px-4">Grand Total</TableCell>
+                <TableCell className="text-right py-3 px-4 text-red-700">
+                  ₹{grandTotal.toFixed(2)}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </CardContent>
     </Card>
