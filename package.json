@@ -11,7 +11,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "export": "next export",
+    "deploy": "npm run build && npm run export && gh-pages -d out"
   },
   "homepage": "https://ajayk01.github.io/firebase-finance",
   "dependencies": {
