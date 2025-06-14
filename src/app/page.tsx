@@ -333,6 +333,7 @@ export default function DashboardPage() {
                 categoryTotalTextColorClassName="text-primary font-semibold"
                 grandTotalTextColorClassName="text-primary"
                 showSubCategoryColumn={false}
+                showCategoryTotalRow={false}
               />
             </div>
             <div>
@@ -348,4 +349,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

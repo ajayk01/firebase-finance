@@ -46,7 +46,8 @@ interface ExpenseBreakdownTableProps {
   amountColumnItemTextColorClassName?: string;
   categoryTotalTextColorClassName?: string;
   grandTotalTextColorClassName?: string;
-  showSubCategoryColumn?: boolean; // New prop
+  showSubCategoryColumn?: boolean;
+  showCategoryTotalRow?: boolean; // New prop
 }
 
 interface CategorizedExpenseGroup {
@@ -73,7 +74,8 @@ export function ExpenseBreakdownTable({
   amountColumnItemTextColorClassName = "text-red-600 font-medium",
   categoryTotalTextColorClassName = "text-red-700 font-semibold",
   grandTotalTextColorClassName = "text-red-700",
-  showSubCategoryColumn = true, // Default to true
+  showSubCategoryColumn = true,
+  showCategoryTotalRow = true, // Default to true
 }: ExpenseBreakdownTableProps) {
 
   const { categorizedData, grandTotal } = React.useMemo(() => {
@@ -164,19 +166,21 @@ export function ExpenseBreakdownTable({
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="bg-muted/50">
-                    {showSubCategoryColumn ? (
-                      <>
-                        <TableCell className="py-2 px-4 font-semibold"></TableCell>
+                  {showCategoryTotalRow && (
+                    <TableRow className="bg-muted/50">
+                      {showSubCategoryColumn ? (
+                        <>
+                          <TableCell className="py-2 px-4 font-semibold"></TableCell>
+                          <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
+                        </>
+                      ) : (
                         <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
-                      </>
-                    ) : (
-                      <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
-                    )}
-                    <TableCell className={cn("text-right py-2 px-4", categoryTotalTextColorClassName)}>
-                      ₹{group.categoryTotal.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
+                      )}
+                      <TableCell className={cn("text-right py-2 px-4", categoryTotalTextColorClassName)}>
+                        ₹{group.categoryTotal.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </React.Fragment>
               ))
             ) : (
