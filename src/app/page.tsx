@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
+import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart"; // New import
 import { Landmark, CreditCard } from "lucide-react";
 import { useState, useMemo } from 'react';
 
@@ -82,6 +83,10 @@ const masterIncomeData = [
   { year: 2024, month: "jun", category: "Client Project Beta", subCategory: "Initial Payment", expense: "₹18000.00" },
   // May 2024 Income
   { year: 2024, month: "may", category: "Client Project Gamma", subCategory: "Phase 1", expense: "₹22000.00" },
+  // August 2024
+  { year: 2024, month: "aug", category: "Product Sales", subCategory: "Online Course", expense: "₹4500.00" },
+  // January 2023 Income
+  { year: 2023, month: "jan", category: "Old Project Delta", subCategory: "Phase 1", expense: "₹5000.00" },
   // July 2023 Income
   { year: 2023, month: "jul", category: "Old Project Omega", subCategory: "Final Settlement", expense: "₹8000.00" },
   { year: 2023, month: "jul", category: "Consulting Services", subCategory: "Old Client Z", expense: "₹6000.00" },
@@ -95,6 +100,10 @@ const masterInvestmentData = [
   // June 2024 Investments
   { year: 2024, month: "jun", category: "Stocks", subCategory: "Blue Chip Stocks", expense: "₹7000.00" },
   { year: 2024, month: "jun", category: "Bonds", subCategory: "Government Bonds", expense: "₹4000.00" },
+  // August 2024
+  { year: 2024, month: "aug", category: "Crypto", subCategory: "Ethereum", expense: "₹2500.00" },
+  // January 2023 Investments
+  { year: 2023, month: "jan", category: "Gold", subCategory: "SGB", expense: "₹1000.00" },
   // July 2023 Investments
   { year: 2023, month: "jul", category: "Mutual Funds", subCategory: "Index Fund", expense: "₹2500.00" },
   { year: 2023, month: "jul", category: "Stocks", subCategory: "Pharma Stock", expense: "₹6000.00" },
@@ -108,9 +117,9 @@ const parseCurrency = (currencyStr: string): number => {
   return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
 };
 
-const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory: string, expense: string }>) => {
+const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory?: string, expense: string }>) => {
   const uniqueYears = Array.from(new Set(data.map(item => item.year)))
-    .sort((a, b) => b - a); // Sort descending
+    .sort((a, b) => b - a); 
   return uniqueYears.map(year => ({ value: year, label: year.toString() }));
 };
 
@@ -129,6 +138,17 @@ export default function DashboardPage() {
   const availableInvestmentYears = useMemo(() => getAvailableYears(masterInvestmentData), []);
   const [selectedInvestmentMonth, setSelectedInvestmentMonth] = useState<string>("jul");
   const [selectedInvestmentYear, setSelectedInvestmentYear] = useState<number>(availableInvestmentYears[0]?.value || new Date().getFullYear());
+
+  // Summary Chart States
+  const allYearsFromAllData = useMemo(() => [
+    ...new Set([
+      ...masterExpenseData.map(d => d.year),
+      ...masterIncomeData.map(d => d.year),
+      ...masterInvestmentData.map(d => d.year),
+    ])
+  ].sort((a,b) => b - a), []);
+  const availableSummaryChartYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
+  const [selectedSummaryChartYear, setSelectedSummaryChartYear] = useState<number>(availableSummaryChartYears[0]?.value || new Date().getFullYear());
 
 
   // Expense Data Processing
@@ -187,6 +207,32 @@ export default function DashboardPage() {
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [selectedInvestmentMonth, selectedInvestmentYear]);
+
+  // Monthly Summary Chart Data Processing
+  const monthlySummaryChartData = useMemo(() => {
+    return monthOptions.map(monthObj => {
+      const month = monthObj.value;
+  
+      const totalExpense = masterExpenseData
+        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+        .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+  
+      const totalIncome = masterIncomeData
+        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+        .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+  
+      const totalInvestment = masterInvestmentData
+        .filter(item => item.month === month && item.year === selectedSummaryChartYear)
+        .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+  
+      return {
+        month: monthObj.label.substring(0, 3), // Short month name e.g., "Jan"
+        expense: totalExpense,
+        income: totalIncome,
+        investment: totalInvestment,
+      };
+    });
+  }, [selectedSummaryChartYear]);
 
 
   return (
@@ -344,6 +390,18 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Monthly Financial Summary
+          </h2>
+          <MonthlySummaryChart
+            data={monthlySummaryChartData}
+            selectedYear={selectedSummaryChartYear}
+            onYearChange={setSelectedSummaryChartYear}
+            years={availableSummaryChartYears}
+          />
         </div>
       </main>
     </div>
