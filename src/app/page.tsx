@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
-                <ExpenseBreakdownTable title="Bank Details" />
+                <ExpenseBreakdownTable title="Expenses" />
                 <ExpenseBreakdownTable title="Credit card details" />
               </div>
               <div className="md:col-span-1">
