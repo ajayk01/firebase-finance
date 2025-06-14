@@ -11,7 +11,7 @@ const data = [
   { name: "Finance & Insurance", value: 17300 },
   { name: "Personal & Medical", value: 15000 },
   { name: "Transportation", value: 13000 },
-  { name: "Other", value: 9300 }, 
+  { name: "Other", value: 9300 },
 ];
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#A78BFA', '#F59E0B', '#EF4444', '#B91C1C', '#DC2626'];
@@ -22,12 +22,12 @@ const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, value, name, fill }: any) => {
   const sin = Math.sin(-midAngle * RADIAN);
   const cos = Math.cos(-midAngle * RADIAN);
-  
+
   const sx = cx + outerRadius * cos;
   const sy = cy + outerRadius * sin;
-  const mx = cx + (outerRadius + 15) * cos; 
+  const mx = cx + (outerRadius + 15) * cos;
   const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 20; 
+  const ex = mx + (cos >= 0 ? 1 : -1) * 20;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
   const labelColor = fill;
@@ -70,8 +70,8 @@ export function ExpensePieChart() {
               cy="50%"
               labelLine={false}
               label={renderCustomizedLabel}
-              outerRadius={110} 
-              innerRadius={70}  
+              outerRadius={110}
+              innerRadius={70}
               fill="#8884d8"
               dataKey="value"
               nameKey="name"
@@ -81,9 +81,9 @@ export function ExpensePieChart() {
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Legend 
-              verticalAlign="bottom" 
-              wrapperStyle={{ lineHeight: '24px', paddingTop: '10px' }} 
+            <Legend
+              verticalAlign="bottom"
+              wrapperStyle={{ lineHeight: '24px', paddingTop: '10px' }}
               iconSize={10}
               iconType="circle"
             />
