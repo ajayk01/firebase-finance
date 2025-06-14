@@ -15,14 +15,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ExpenseItem {
+  year: number;
   month: string;
   category: string;
   subCategory: string;
-  expense: string; // Keep as string from props, parse internally
+  expense: string; 
 }
 
 interface MonthOption {
   value: string;
+  label: string;
+}
+
+interface YearOption {
+  value: number;
   label: string;
 }
 
@@ -31,6 +37,9 @@ interface ExpenseBreakdownTableProps {
   selectedMonth?: string;
   onMonthChange?: (value: string) => void;
   months?: MonthOption[];
+  selectedYear?: number;
+  onYearChange?: (value: number) => void;
+  years?: YearOption[];
   data: ExpenseItem[];
 }
 
@@ -45,7 +54,16 @@ const parseCurrency = (currencyStr: string): number => {
   return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
 };
 
-export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, months, data }: ExpenseBreakdownTableProps) {
+export function ExpenseBreakdownTable({ 
+  title, 
+  selectedMonth, 
+  onMonthChange, 
+  months, 
+  selectedYear,
+  onYearChange,
+  years,
+  data 
+}: ExpenseBreakdownTableProps) {
 
   const { categorizedData, grandTotal } = React.useMemo(() => {
     if (!data || data.length === 0) {
@@ -68,19 +86,21 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
 
     const sortedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
       categoryName,
-      items: groupData.items, // Items within a category retain their original order from `data`
+      items: groupData.items,
       categoryTotal: groupData.total,
-    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName)); // Sort categories alphabetically
+    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
 
     return { categorizedData: sortedCategorizedData, grandTotal: calculatedGrandTotal };
   }, [data]);
 
+  const showSelectors = selectedMonth && onMonthChange && months && selectedYear !== undefined && onYearChange && years;
+
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-x-2">
+      <CardHeader className="flex flex-row items-center justify-between space-x-2 pb-4">
         <CardTitle className="text-xl font-semibold whitespace-nowrap">{title}</CardTitle>
-        {selectedMonth && onMonthChange && months && (
-          <div className="min-w-[180px] flex-shrink-0">
+        {showSelectors && (
+          <div className="flex space-x-2 min-w-[180px] flex-shrink-0">
             <Select value={selectedMonth} onValueChange={onMonthChange}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select month" />
@@ -89,6 +109,21 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
                 {months.map((month) => (
                   <SelectItem key={month.value} value={month.value}>
                     {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select 
+              value={selectedYear.toString()} 
+              onValueChange={(value) => onYearChange(parseInt(value, 10))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year.value} value={year.value.toString()}>
+                    {year.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -110,7 +145,7 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
               categorizedData.map((group) => (
                 <React.Fragment key={group.categoryName}>
                   {group.items.map((item, itemIndex) => (
-                    <TableRow key={`${item.month}-${item.category}-${item.subCategory}-${itemIndex}`}>
+                    <TableRow key={`${item.year}-${item.month}-${item.category}-${item.subCategory}-${itemIndex}`}>
                       <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
                       <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
                       <TableCell className="text-right py-3 px-4 text-red-600 font-medium">
@@ -130,7 +165,7 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
             ) : (
               <TableRow>
                 <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
-                  No expenses recorded for the selected month.
+                  No expenses recorded for the selected month and year.
                 </TableCell>
               </TableRow>
             )}
