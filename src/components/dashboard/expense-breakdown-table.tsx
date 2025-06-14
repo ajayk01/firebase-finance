@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface ExpenseItem {
   year: number;
@@ -41,6 +42,10 @@ interface ExpenseBreakdownTableProps {
   onYearChange?: (value: number) => void;
   years?: YearOption[];
   data: ExpenseItem[];
+  amountColumnHeaderText?: string;
+  amountColumnItemTextColorClassName?: string;
+  categoryTotalTextColorClassName?: string;
+  grandTotalTextColorClassName?: string;
 }
 
 interface CategorizedExpenseGroup {
@@ -62,7 +67,11 @@ export function ExpenseBreakdownTable({
   selectedYear,
   onYearChange,
   years,
-  data 
+  data,
+  amountColumnHeaderText = "Expense",
+  amountColumnItemTextColorClassName = "text-red-600 font-medium",
+  categoryTotalTextColorClassName = "text-red-700 font-semibold",
+  grandTotalTextColorClassName = "text-red-700"
 }: ExpenseBreakdownTableProps) {
 
   const { categorizedData, grandTotal } = React.useMemo(() => {
@@ -86,9 +95,9 @@ export function ExpenseBreakdownTable({
 
     const sortedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
       categoryName,
-      items: groupData.items,
+      items: groupData.items.sort((a, b) => a.subCategory.localeCompare(b.subCategory)), // Sort items within category
       categoryTotal: groupData.total,
-    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName)); // Sort categories
 
     return { categorizedData: sortedCategorizedData, grandTotal: calculatedGrandTotal };
   }, [data]);
@@ -137,7 +146,7 @@ export function ExpenseBreakdownTable({
             <TableRow>
               <TableHead className="py-3 px-4">Category</TableHead>
               <TableHead className="py-3 px-4">Sub-category</TableHead>
-              <TableHead className="text-right py-3 px-4">Expense</TableHead>
+              <TableHead className="text-right py-3 px-4">{amountColumnHeaderText}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -148,7 +157,7 @@ export function ExpenseBreakdownTable({
                     <TableRow key={`${item.year}-${item.month}-${item.category}-${item.subCategory}-${itemIndex}`}>
                       <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
                       <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
-                      <TableCell className="text-right py-3 px-4 text-red-600 font-medium">
+                      <TableCell className={cn("text-right py-3 px-4", amountColumnItemTextColorClassName)}>
                         ₹{parseCurrency(item.expense).toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -156,7 +165,7 @@ export function ExpenseBreakdownTable({
                   <TableRow className="bg-muted/50">
                     <TableCell className="py-2 px-4 font-semibold"></TableCell>
                     <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
-                    <TableCell className="text-right py-2 px-4 text-red-700 font-semibold">
+                    <TableCell className={cn("text-right py-2 px-4", categoryTotalTextColorClassName)}>
                       ₹{group.categoryTotal.toFixed(2)}
                     </TableCell>
                   </TableRow>
@@ -165,7 +174,7 @@ export function ExpenseBreakdownTable({
             ) : (
               <TableRow>
                 <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
-                  No expenses recorded for the selected month and year.
+                  No data recorded for the selected month and year.
                 </TableCell>
               </TableRow>
             )}
@@ -174,7 +183,7 @@ export function ExpenseBreakdownTable({
             <TableFooter>
               <TableRow className="bg-card font-bold text-base">
                 <TableCell colSpan={2} className="text-right py-3 px-4">Grand Total</TableCell>
-                <TableCell className="text-right py-3 px-4 text-red-700">
+                <TableCell className={cn("text-right py-3 px-4", grandTotalTextColorClassName)}>
                   ₹{grandTotal.toFixed(2)}
                 </TableCell>
               </TableRow>

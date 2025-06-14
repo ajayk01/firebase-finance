@@ -31,7 +31,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
     formattedValue = `₹${(value / 1000).toFixed(1)}K`;
   }
   
-  if (percent < 0.03 || !isFinite(sx) || !isFinite(sy)) return null;
+  if (percent < 0.03 || !isFinite(sx) || !isFinite(sy) || value === 0) return null;
 
 
   return (
@@ -56,17 +56,23 @@ interface PieChartDataItem {
 
 interface ExpensePieChartProps {
   data: PieChartDataItem[];
+  chartTitle?: string;
+  chartDescription?: string;
 }
 
-export function ExpensePieChart({ data }: ExpensePieChartProps) {
+export function ExpensePieChart({ 
+  data, 
+  chartTitle = "Selected Month expense", 
+  chartDescription = "Breakdown By Category" 
+}: ExpensePieChartProps) {
   const chartData = data;
   const totalAmount = chartData.reduce((sum, entry) => sum + entry.value, 0);
 
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="items-center pb-3">
-        <CardTitle className="text-2xl font-bold">Selected Month expense</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">Breakdown By Category</CardDescription>
+        <CardTitle className="text-2xl font-bold">{chartTitle}</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">{chartDescription}</CardDescription>
       </CardHeader>
       <CardContent className="h-[380px] relative">
         {chartData.length > 0 ? (
@@ -101,7 +107,7 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <p className="text-lg text-muted-foreground">
-              No expense data for the selected month.
+              No data for the selected month and year.
             </p>
           </div>
         )}
