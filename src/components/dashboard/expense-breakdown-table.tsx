@@ -20,7 +20,7 @@ interface ExpenseItem {
   month: string;
   category: string;
   subCategory: string;
-  expense: string; 
+  expense: string;
 }
 
 interface MonthOption {
@@ -46,6 +46,7 @@ interface ExpenseBreakdownTableProps {
   amountColumnItemTextColorClassName?: string;
   categoryTotalTextColorClassName?: string;
   grandTotalTextColorClassName?: string;
+  showSubCategoryColumn?: boolean; // New prop
 }
 
 interface CategorizedExpenseGroup {
@@ -59,11 +60,11 @@ const parseCurrency = (currencyStr: string): number => {
   return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
 };
 
-export function ExpenseBreakdownTable({ 
-  title, 
-  selectedMonth, 
-  onMonthChange, 
-  months, 
+export function ExpenseBreakdownTable({
+  title,
+  selectedMonth,
+  onMonthChange,
+  months,
   selectedYear,
   onYearChange,
   years,
@@ -71,7 +72,8 @@ export function ExpenseBreakdownTable({
   amountColumnHeaderText = "Expense",
   amountColumnItemTextColorClassName = "text-red-600 font-medium",
   categoryTotalTextColorClassName = "text-red-700 font-semibold",
-  grandTotalTextColorClassName = "text-red-700"
+  grandTotalTextColorClassName = "text-red-700",
+  showSubCategoryColumn = true, // Default to true
 }: ExpenseBreakdownTableProps) {
 
   const { categorizedData, grandTotal } = React.useMemo(() => {
@@ -95,9 +97,9 @@ export function ExpenseBreakdownTable({
 
     const sortedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
       categoryName,
-      items: groupData.items.sort((a, b) => a.subCategory.localeCompare(b.subCategory)), // Sort items within category
+      items: groupData.items.sort((a, b) => a.subCategory.localeCompare(b.subCategory)),
       categoryTotal: groupData.total,
-    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName)); // Sort categories
+    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
 
     return { categorizedData: sortedCategorizedData, grandTotal: calculatedGrandTotal };
   }, [data]);
@@ -122,8 +124,8 @@ export function ExpenseBreakdownTable({
                 ))}
               </SelectContent>
             </Select>
-            <Select 
-              value={selectedYear.toString()} 
+            <Select
+              value={selectedYear.toString()}
               onValueChange={(value) => onYearChange(parseInt(value, 10))}
             >
               <SelectTrigger className="w-full">
@@ -145,7 +147,7 @@ export function ExpenseBreakdownTable({
           <TableHeader>
             <TableRow>
               <TableHead className="py-3 px-4">Category</TableHead>
-              <TableHead className="py-3 px-4">Sub-category</TableHead>
+              {showSubCategoryColumn && <TableHead className="py-3 px-4">Sub-category</TableHead>}
               <TableHead className="text-right py-3 px-4">{amountColumnHeaderText}</TableHead>
             </TableRow>
           </TableHeader>
@@ -156,15 +158,21 @@ export function ExpenseBreakdownTable({
                   {group.items.map((item, itemIndex) => (
                     <TableRow key={`${item.year}-${item.month}-${item.category}-${item.subCategory}-${itemIndex}`}>
                       <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
-                      <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
+                      {showSubCategoryColumn && <TableCell className="py-3 px-4">{item.subCategory}</TableCell>}
                       <TableCell className={cn("text-right py-3 px-4", amountColumnItemTextColorClassName)}>
                         ₹{parseCurrency(item.expense).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50">
-                    <TableCell className="py-2 px-4 font-semibold"></TableCell>
-                    <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
+                    {showSubCategoryColumn ? (
+                      <>
+                        <TableCell className="py-2 px-4 font-semibold"></TableCell>
+                        <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
+                      </>
+                    ) : (
+                      <TableCell className="py-2 px-4 font-semibold text-right">{group.categoryName} Total</TableCell>
+                    )}
                     <TableCell className={cn("text-right py-2 px-4", categoryTotalTextColorClassName)}>
                       ₹{group.categoryTotal.toFixed(2)}
                     </TableCell>
@@ -173,7 +181,7 @@ export function ExpenseBreakdownTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={showSubCategoryColumn ? 3 : 2} className="text-center py-10 text-muted-foreground">
                   No data recorded for the selected month and year.
                 </TableCell>
               </TableRow>
@@ -182,7 +190,7 @@ export function ExpenseBreakdownTable({
           {categorizedData.length > 0 && (
             <TableFooter>
               <TableRow className="bg-card font-bold text-base">
-                <TableCell colSpan={2} className="text-right py-3 px-4">Grand Total</TableCell>
+                <TableCell colSpan={showSubCategoryColumn ? 2 : 1} className="text-right py-3 px-4">Grand Total</TableCell>
                 <TableCell className={cn("text-right py-3 px-4", grandTotalTextColorClassName)}>
                   ₹{grandTotal.toFixed(2)}
                 </TableCell>

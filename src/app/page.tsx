@@ -159,7 +159,7 @@ export default function DashboardPage() {
     const monthlyIncome = masterIncomeData.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
     const aggregated: { [key: string]: number } = {};
     monthlyIncome.forEach(item => {
-      const value = parseCurrency(item.expense); 
+      const value = parseCurrency(item.expense);
       if (aggregated[item.category]) {
         aggregated[item.category] += value;
       } else {
@@ -273,8 +273,8 @@ export default function DashboardPage() {
               />
             </div>
             <div>
-              <ExpensePieChart 
-                data={currentMonthExpensePieData} 
+              <ExpensePieChart
+                data={currentMonthExpensePieData}
                 chartTitle="Selected Month Expense"
                 chartDescription="Breakdown By Category"
               />
@@ -304,7 +304,7 @@ export default function DashboardPage() {
               />
             </div>
             <div>
-              <ExpensePieChart 
+              <ExpensePieChart
                 data={currentMonthIncomePieData}
                 chartTitle="Selected Month Income"
                 chartDescription="Breakdown By Category"
@@ -332,10 +332,11 @@ export default function DashboardPage() {
                 amountColumnItemTextColorClassName="text-primary font-medium"
                 categoryTotalTextColorClassName="text-primary font-semibold"
                 grandTotalTextColorClassName="text-primary"
+                showSubCategoryColumn={false}
               />
             </div>
             <div>
-              <ExpensePieChart 
+              <ExpensePieChart
                 data={currentMonthInvestmentPieData}
                 chartTitle="Selected Month Investments"
                 chartDescription="Breakdown By Category"
@@ -347,3 +348,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
