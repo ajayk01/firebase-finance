@@ -46,7 +46,11 @@ interface MonthlyMoneyTableProps {
   years: YearOption[];
 }
 
-const formatCurrency = (amount: number): string => {
+const formatCurrency = (amount: number | undefined): string => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    // Handles undefined, null (if it could get here via 'any' type), and NaN
+    return '₹ --.--'; 
+  }
   return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
