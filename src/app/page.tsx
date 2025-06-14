@@ -5,7 +5,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-table";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
-import { MonthlyMoneyTable } from "@/components/dashboard/monthly-money-table";
+import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
 import { Landmark, CreditCard } from "lucide-react";
 import { useState, useMemo } from 'react';
 
@@ -112,6 +112,13 @@ const masterInvestmentData = [
   { year: 2023, month: "aug", category: "Crypto", subCategory: "Bitcoin", expense: "₹1500.00" },
 ];
 
+const bankAccountDetails = [
+  { id: 'bank1', name: "Global Trust Bank (Savings)", balance: 600000, icon: Landmark },
+  { id: 'bank2', name: "Global Trust Bank (Current)", balance: 125000, icon: Landmark },
+  { id: 'bank3', name: "City Commercial Bank", balance: 350000, icon: Landmark },
+  { id: 'bank4', name: "National Cooperative", balance: 85000, icon: Landmark },
+];
+
 
 const parseCurrency = (currencyStr: string): number => {
   if (!currencyStr) return 0;
@@ -120,7 +127,7 @@ const parseCurrency = (currencyStr: string): number => {
 
 const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory?: string, expense: string }>) => {
   const uniqueYears = Array.from(new Set(data.map(item => item.year)))
-    .sort((a, b) => b - a); 
+    .sort((a, b) => b - a);
   return uniqueYears.map(year => ({ value: year, label: year.toString() }));
 };
 
@@ -150,6 +157,7 @@ export default function DashboardPage() {
   ].sort((a,b) => b - a), []);
   const availableSummaryYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
   const [selectedSummaryYear, setSelectedSummaryYear] = useState<number>(availableSummaryYears[0]?.value || new Date().getFullYear());
+  const [selectedSummaryDetailMonth, setSelectedSummaryDetailMonth] = useState<string>("jul");
 
 
   // Expense Data Processing
@@ -209,43 +217,66 @@ export default function DashboardPage() {
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [selectedInvestmentMonth, selectedInvestmentYear]);
 
-  // Monthly Summary Data Processing (for Chart and new Table)
-  const monthlySummaryData = useMemo(() => {
-    const placeholderStartingBalance = 50000; 
+  // Data for Monthly Summary Chart (12 months)
+  const monthlySummaryChartData = useMemo(() => {
     return monthOptions.map(monthObj => {
       const month = monthObj.value;
-  
-      const currentYearTotalExpense = masterExpenseData
+
+      const totalExpense = masterExpenseData
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
-  
-      const currentYearTotalIncome = masterIncomeData
+
+      const totalIncome = masterIncomeData
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
-  
-      const currentYearTotalInvestment = masterInvestmentData
+
+      const totalInvestment = masterInvestmentData
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
-  
+
       return {
-        month: monthObj.label, 
-        monthShort: monthObj.label.substring(0, 3),
-        totalExpense: currentYearTotalExpense,
-        totalIncome: currentYearTotalIncome,
-        totalInvestment: currentYearTotalInvestment,
-        startingBankBalance: placeholderStartingBalance, 
+        month: monthObj.label.substring(0, 3), // Short month name for chart
+        expense: totalExpense,
+        income: totalIncome,
+        investment: totalInvestment,
       };
     });
   }, [selectedSummaryYear]);
 
-  const monthlyChartFormattedData = useMemo(() => {
-    return monthlySummaryData.map(d => ({
-      month: d.monthShort,
-      expense: d.totalExpense,
-      income: d.totalIncome,
-      investment: d.totalInvestment,
-    }));
-  }, [monthlySummaryData]);
+
+  // Data for Selected Month Financial Snapshot Table
+  const financialSnapshotTableData = useMemo(() => {
+    const expenseForSelectedMonth = masterExpenseData
+      .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
+      .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+
+    const incomeForSelectedMonth = masterIncomeData
+      .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
+      .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+
+    const investmentForSelectedMonth = masterInvestmentData
+      .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
+      .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
+
+    const totalBankBalance = bankAccountDetails.reduce((sum, acc) => sum + acc.balance, 0);
+
+    const netFlows = incomeForSelectedMonth - expenseForSelectedMonth - investmentForSelectedMonth;
+    
+    let netFlowsColorClass = "text-foreground"; // Default
+    if (netFlows > 0) {
+      netFlowsColorClass = "text-green-600";
+    } else if (netFlows < 0) {
+      netFlowsColorClass = "text-red-600";
+    }
+
+    return [
+      { category: "Total Expense", amount: expenseForSelectedMonth, colorClassName: "text-red-600 font-medium" },
+      { category: "Total Income", amount: incomeForSelectedMonth, colorClassName: "text-green-600 font-medium" },
+      { category: "Total Investment", amount: investmentForSelectedMonth, colorClassName: "text-primary font-medium" },
+      { category: "Total Bank Balance", amount: totalBankBalance, colorClassName: "text-foreground font-medium" },
+      { category: "Total Netflows", amount: netFlows, colorClassName: `${netFlowsColorClass} font-medium` },
+    ] as FinancialSnapshotItem[];
+  }, [selectedSummaryDetailMonth, selectedSummaryYear]);
 
 
   return (
@@ -257,26 +288,14 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
               <div className="grid gap-4 md:grid-cols-2">
-                <StatCard
-                  logoIcon={Landmark}
-                  bankName="Global Trust Bank"
-                  currentBalanceText="Current Balance : ₹60,0000"
-                />
-                <StatCard
-                  logoIcon={Landmark}
-                  bankName="Global Trust Bank"
-                  currentBalanceText="Current Balance : ₹60,0000"
-                />
-                <StatCard
-                  logoIcon={Landmark}
-                  bankName="Global Trust Bank"
-                  currentBalanceText="Current Balance : ₹60,0000"
-                />
-                <StatCard
-                  logoIcon={Landmark}
-                  bankName="Global Trust Bank"
-                  currentBalanceText="Current Balance : ₹60,0000"
-                />
+                {bankAccountDetails.map((account) => (
+                  <StatCard
+                    key={account.id}
+                    logoIcon={account.icon}
+                    bankName={account.name}
+                    currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -407,10 +426,10 @@ export default function DashboardPage() {
 
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">
-            Monthly Financial Summary
+            Monthly Financial Summary Chart
           </h2>
           <MonthlySummaryChart
-            data={monthlyChartFormattedData}
+            data={monthlySummaryChartData}
             selectedYear={selectedSummaryYear}
             onYearChange={setSelectedSummaryYear}
             years={availableSummaryYears}
@@ -419,10 +438,13 @@ export default function DashboardPage() {
 
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">
-            Monthly Money Table
+            Selected Month Financial Snapshot
           </h2>
           <MonthlyMoneyTable
-            data={monthlySummaryData}
+            data={financialSnapshotTableData}
+            selectedMonth={selectedSummaryDetailMonth}
+            onMonthChange={setSelectedSummaryDetailMonth}
+            months={monthOptions}
             selectedYear={selectedSummaryYear}
             onYearChange={setSelectedSummaryYear}
             years={availableSummaryYears}

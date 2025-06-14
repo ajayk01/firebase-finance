@@ -20,12 +20,15 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-interface MonthlyMoneyItem {
-  month: string; // Full month name e.g., "January"
-  totalExpense: number;
-  totalIncome: number;
-  totalInvestment: number;
-  startingBankBalance: number; // Placeholder value
+export interface FinancialSnapshotItem {
+  category: string;
+  amount: number;
+  colorClassName?: string;
+}
+
+interface MonthOption {
+  value: string;
+  label: string;
 }
 
 interface YearOption {
@@ -34,7 +37,10 @@ interface YearOption {
 }
 
 interface MonthlyMoneyTableProps {
-  data: MonthlyMoneyItem[];
+  data: FinancialSnapshotItem[];
+  selectedMonth: string;
+  onMonthChange: (value: string) => void;
+  months: MonthOption[];
   selectedYear: number;
   onYearChange: (value: number) => void;
   years: YearOption[];
@@ -46,6 +52,9 @@ const formatCurrency = (amount: number): string => {
 
 export function MonthlyMoneyTable({
   data,
+  selectedMonth,
+  onMonthChange,
+  months,
   selectedYear,
   onYearChange,
   years,
@@ -54,9 +63,21 @@ export function MonthlyMoneyTable({
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between space-x-2 pb-4">
         <CardTitle className="text-xl font-semibold whitespace-nowrap">
-          Monthly Financial Totals
+          Monthly Financial Snapshot
         </CardTitle>
-        <div className="flex space-x-2 min-w-[100px] flex-shrink-0">
+        <div className="flex space-x-2 min-w-[180px] flex-shrink-0">
+          <Select value={selectedMonth} onValueChange={onMonthChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select month" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select
             value={selectedYear.toString()}
             onValueChange={(value) => onYearChange(parseInt(value, 10))}
@@ -78,37 +99,24 @@ export function MonthlyMoneyTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="py-3 px-4">Month</TableHead>
-              <TableHead className="text-right py-3 px-4">Total Expense</TableHead>
-              <TableHead className="text-right py-3 px-4">Total Income</TableHead>
-              <TableHead className="text-right py-3 px-4">Total Investment</TableHead>
-              <TableHead className="text-right py-3 px-4">Starting Bank Balance</TableHead>
+              <TableHead className="py-3 px-4">Category</TableHead>
+              <TableHead className="text-right py-3 px-4">Total Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length > 0 ? (
               data.map((item) => (
-                <TableRow key={item.month}>
-                  <TableCell className="font-medium py-3 px-4">{item.month}</TableCell>
-                  <TableCell className={cn("text-right py-3 px-4", item.totalExpense > 0 ? "text-red-600" : "text-foreground")}>
-                    {formatCurrency(item.totalExpense)}
-                  </TableCell>
-                  <TableCell className={cn("text-right py-3 px-4", item.totalIncome > 0 ? "text-green-600" : "text-foreground")}>
-                    {formatCurrency(item.totalIncome)}
-                  </TableCell>
-                  <TableCell className={cn("text-right py-3 px-4", item.totalInvestment > 0 ? "text-primary" : "text-foreground")}>
-                    {formatCurrency(item.totalInvestment)}
-                  </TableCell>
-                  <TableCell className="text-right py-3 px-4 text-muted-foreground">
-                    {formatCurrency(item.startingBankBalance)}
-                    <span className="text-xs italic ml-1">(placeholder)</span>
+                <TableRow key={item.category}>
+                  <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
+                  <TableCell className={cn("text-right py-3 px-4", item.colorClassName)}>
+                    {formatCurrency(item.amount)}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                  No data available for the selected year.
+                <TableCell colSpan={2} className="text-center py-10 text-muted-foreground">
+                  No data available for the selected month and year.
                 </TableCell>
               </TableRow>
             )}
