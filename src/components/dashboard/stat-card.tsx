@@ -12,12 +12,12 @@ interface StatCardProps {
   isPrimary?: boolean;
   dataAiHint?: string;
 
-  logoIcon?: LucideIcon;
+  logoIcon?: string;
   bankName?: string;
   currentBalanceText?: string;
   accountNumber?: string; // Kept for potential future use, but not primary display if currentBalanceText exists
 
-  creditCardLogoIcon?: LucideIcon;
+  creditCardLogoIcon?: string; // Renamed to avoid conflict with CreditCardLogoIconComponent
   creditCardName?: string;
   usedAmountText?: string;
   totalLimitText?: string;
@@ -78,7 +78,11 @@ export function StatCard(props: StatCardProps) {
       {showCreditCardDetails ? (
         <>
           <div className="flex items-center justify-start gap-3 mb-3">
-            {CreditCardLogoIconComponent && <CreditCardLogoIconComponent className="h-7 w-7 text-primary" />}
+            {props.creditCardLogoIcon && <img
+                        src={props.creditCardLogoIcon}
+                        alt={creditCardName || "credit_card Logo"}
+                        className="h-8 w-8 object-contain"
+                      />}
             {creditCardName && <h3 className="text-lg font-semibold text-foreground">{creditCardName}</h3>}
           </div>
           {usedAmountText && (
@@ -97,7 +101,12 @@ export function StatCard(props: StatCardProps) {
       ) : showBankDetails ? (
         <>
           <div className="flex items-center justify-start gap-3 mb-2">
-            {BankLogoIconComponent && <BankLogoIconComponent className="h-8 w-8 text-primary" />}
+            {BankLogoIconComponent && <img
+                        src={BankLogoIconComponent}
+                        alt={bankName || "Bank Logo"}
+                        className="h-8 w-8 object-contain"
+                      />
+            }
             {bankName && <h3 className="text-lg font-semibold text-foreground">{bankName}</h3>}
           </div>
           {currentBalanceText ? (

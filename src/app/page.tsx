@@ -116,6 +116,7 @@ interface BankAccount {
   id: string;
   name: string;
   balance: number;
+  logo: string; // Optional logo URL
 }
 
 interface CreditCardAccount {
@@ -123,6 +124,7 @@ interface CreditCardAccount {
   name: string;
   usedAmount: number;
   totalLimit: number;
+  logo : string;
 }
 
 const parseCurrency = (currencyStr: string): number => {
@@ -335,14 +337,17 @@ export default function DashboardPage() {
               )}
               {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {apiBankAccounts.map((account) => (
-                    <StatCard
-                      key={account.id}
-                      logoIcon={Landmark} // Hardcoded for now
-                      bankName={account.name}
-                      currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
-                    />
-                  ))}
+                  {apiBankAccounts
+                      .slice()
+                      .sort((a, b) => b.balance - a.balance) // sort descending by balance
+                      .map((account) => (
+                        <StatCard
+                          key={account.id}
+                          logoIcon={account.logo}
+                          bankName={account.name}
+                          currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
+                        />
+                    ))}
                 </div>
               )}
             </div>
@@ -366,7 +371,7 @@ export default function DashboardPage() {
                   {apiCreditCards.map((card) => (
                     <StatCard
                       key={card.id}
-                      creditCardLogoIcon={CreditCard} // Hardcoded for now
+                      creditCardLogoIcon={card.logo} // Hardcoded for now
                       creditCardName={card.name}
                       usedAmountText={`Used : ${card.usedAmount.toLocaleString('en-IN')}`}
                       totalLimitText={`Total Limit : ${card.totalLimit.toLocaleString('en-IN')}`}
