@@ -15,6 +15,7 @@ interface StatCardProps {
   logoIcon?: LucideIcon;
   bankName?: string;
   currentBalanceText?: string;
+  accountNumber?: string; // Kept for potential future use, but not primary display if currentBalanceText exists
 
   creditCardLogoIcon?: LucideIcon;
   creditCardName?: string;
@@ -29,24 +30,29 @@ export function StatCard(props: StatCardProps) {
     percentageChange,
     Icon,
     isPrimary = false,
+    // Bank specific
     logoIcon: BankLogoIconComponent,
     bankName,
     currentBalanceText,
-    creditCardLogoIcon: CreditCardLogoIconComponent = DefaultCreditCardIcon,
+    accountNumber,
+    // Credit Card specific
+    creditCardLogoIcon: CreditCardLogoIconComponentFromProp, // Renamed to avoid conflict
     creditCardName,
     usedAmountText,
     totalLimitText,
   } = props;
 
+  const CreditCardLogoIconComponent = CreditCardLogoIconComponentFromProp || DefaultCreditCardIcon;
+
+
   const showCreditCardDetails = !!(
-    (CreditCardLogoIconComponent && CreditCardLogoIconComponent !== DefaultCreditCardIcon) ||
+    props.creditCardLogoIcon || // Check existence of the prop itself
     creditCardName ||
     usedAmountText ||
-    totalLimitText ||
-    props.creditCardLogoIcon // This check is now valid
+    totalLimitText
   );
 
-  const showBankDetails = !showCreditCardDetails && !!(BankLogoIconComponent || bankName || currentBalanceText);
+  const showBankDetails = !showCreditCardDetails && !!(BankLogoIconComponent || bankName || currentBalanceText || accountNumber);
   const showGeneralStats = !showBankDetails && !showCreditCardDetails && !!(title || value || Icon || percentageChange !== undefined);
 
 
@@ -66,7 +72,8 @@ export function StatCard(props: StatCardProps) {
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col",
-      "bg-card text-card-foreground p-4"
+      showBankDetails ? "bg-card text-card-foreground p-4" : "bg-card text-card-foreground p-4",
+      // Removed isPrimary condition for background here, bank details will use default card bg
     )}>
       {showCreditCardDetails ? (
         <>
@@ -99,27 +106,34 @@ export function StatCard(props: StatCardProps) {
               const labelPart = parts[0] ? `${parts[0]} :` : '';
               const valuePart = parts[1] || '';
               return (
-                <p className="text-xl font-semibold mt-1">
+                <p className="text-lg font-semibold mt-1"> {/* Changed from text-xl to text-lg */}
                   <span className="text-primary">{labelPart} </span>
                   <span className="text-foreground">₹{valuePart}</span>
                 </p>
               );
             })()
-          ) : null}
+          ) : accountNumber ? (
+            <p className="text-sm text-muted-foreground mt-1">
+              Account: {accountNumber}
+            </p>
+          ): null}
         </>
       ) : showGeneralStats ? (
         <>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 !p-0">
+          <CardHeader className={cn(
+            "flex flex-row items-center justify-between space-y-0 pb-2 !p-0",
+            isPrimary && !showBankDetails ? "text-primary-foreground" : "" // Apply only if primary and not bank details
+          )}>
             {title && (
               <CardTitle className={cn(
                 "text-sm font-medium",
-                isPrimary ? "text-primary-foreground/80" : "text-muted-foreground"
+                isPrimary && !showBankDetails ? "text-primary-foreground/80" : "text-muted-foreground"
               )}>
                 {title}
               </CardTitle>
             )}
             {Icon && (
-              isPrimary ? (
+              isPrimary && !showBankDetails ? (
                 <Icon className="h-5 w-5 text-primary-foreground/80" />
               ) : (
                 <div className="p-1.5 rounded-full bg-primary/10">
@@ -130,11 +144,14 @@ export function StatCard(props: StatCardProps) {
           </CardHeader>
           <CardContent className="!p-0 pt-2">
             {value && (
-                <div className={cn("text-3xl font-bold", isPrimary ? "text-primary-foreground" : "text-foreground")}>{value}</div>
+                <div className={cn(
+                  "text-3xl font-bold", 
+                  isPrimary && !showBankDetails ? "text-primary-foreground" : "text-foreground"
+                )}>{value}</div>
             )}
             {percentageChange !== undefined && (
               <p className={cn("text-xs flex items-center mt-1",
-                isPrimary
+                isPrimary && !showBankDetails
                   ? (percentageChange >= 0 ? "text-green-300" : "text-red-300")
                   : (percentageChange >= 0 ? "text-green-500" : "text-red-500")
               )}>
@@ -152,7 +169,7 @@ export function StatCard(props: StatCardProps) {
           </CardContent>
         </>
       ) : (
-        null // Render nothing if no specific content type matches
+        null // Render nothing if no specific content type matches (or to maintain min-height)
       )}
     </Card>
   );
