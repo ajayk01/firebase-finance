@@ -3,44 +3,6 @@
 
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useEffect } from 'react';
-
-const pieChartRawData = [
-  // January
-  { month: "jan", name: "Housing Jan", value: 75000 },
-  { month: "jan", name: "Food Jan", value: 22000 },
-  { month: "jan", name: "Transport Jan", value: 12000 },
-  { month: "jan", name: "Savings Jan", value: 10000 },
-  // February
-  { month: "feb", name: "Utilities Feb", value: 18000 },
-  { month: "feb", name: "Entertainment Feb", value: 10000 },
-  { month: "feb", name: "Subscriptions Feb", value: 5000 },
-  // March
-  { month: "mar", name: "Shopping Mar", value: 30000 },
-  { month: "mar", name: "Healthcare Mar", value: 15000 },
-  { month: "mar", name: "Gifts Mar", value: 8000 },
-  // April
-  { month: "apr", name: "Rent Apr", value: 90000 },
-  { month: "apr", name: "Groceries Apr", value: 28000 },
-  // May
-  { month: "may", name: "Travel May", value: 40000 },
-  { month: "may", name: "Dining Out May", value: 12000 },
-  // June
-  { month: "jun", name: "Home Improvement Jun", value: 25000 },
-  { month: "jun", name: "Education Jun", value: 18000 },
-  // July
-  { month: "jul", name: "House & Utilities", value: 84000 },
-  { month: "jul", name: "Groceries", value: 25000 },
-  { month: "jul", name: "Children/Dependants", value: 20000 },
-  { month: "jul", name: "Finance & Insurance", value: 17300 },
-  { month: "jul", name: "Personal & Medical", value: 15000 },
-  { month: "jul", name: "Transportation", value: 13000 },
-  { month: "jul", name: "Other", value: 9300 },
-  // Add more sample data for other months as needed
-  { month: "aug", name: "Vacation Aug", value: 100000 },
-  { month: "aug", name: "Souvenirs Aug", value: 5000 },
-];
-
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#A78BFA', '#F59E0B', '#EF4444', '#B91C1C', '#DC2626', '#10B981', '#6366F1', '#F97316'];
 
@@ -63,8 +25,10 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   if (value % 1000 === 0 && value !== 0) {
     formattedValue = `₹${(value / 1000).toFixed(0)}K`;
   }
+  // Ensure very small percentages (which might have NaN or Infinity values for label position if outerRadius is small)
+  // or zero values don't render labels that might break layout.
+  if (percent < 0.03 || !isFinite(sx) || !isFinite(sy)) return null;
 
-  if (percent < 0.05) return null; // Hide label if slice is too small
 
   return (
     <g>
@@ -81,17 +45,18 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   );
 };
 
-interface ExpensePieChartProps {
-  selectedMonth: string;
+interface PieChartDataItem {
+  name: string;
+  value: number;
 }
 
-export function ExpensePieChart({ selectedMonth }: ExpensePieChartProps) {
-  const chartData = pieChartRawData.filter(item => item.month === selectedMonth);
-  const totalAmount = chartData.reduce((sum, entry) => sum + entry.value, 0);
+interface ExpensePieChartProps {
+  data: PieChartDataItem[];
+}
 
-  // useEffect(() => {
-  //   console.log("Pie chart selected month:", selectedMonth, "Chart Data:", chartData);
-  // }, [selectedMonth, chartData]);
+export function ExpensePieChart({ data }: ExpensePieChartProps) {
+  const chartData = data;
+  const totalAmount = chartData.reduce((sum, entry) => sum + entry.value, 0);
 
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
