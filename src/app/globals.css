@@ -36,8 +36,8 @@ body {
     --input: 220 30% 94%; /* #E8ECF1 - Input backgrounds */
     --ring: 217 91% 65%; /* Focus rings, related to primary */
     
-    --chart-1: 217 91% 60%; /* Blue for Profit */
-    --chart-2: 220 20% 55%; /* Darker gray for Loss / Expenses */
+    --chart-1: 145 63% 42%; /* Green for Income / Profit / Revenue */
+    --chart-2: 0 72% 51%; /* Red for Expense / Loss */
     --chart-3: 43 74% 66%;
     --chart-4: 27 87% 67%;
     --chart-5: 173 58% 39%;
@@ -84,8 +84,8 @@ body {
     --input: 220 15% 22%;
     --ring: 223 55% 65%;
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
+    --chart-1: 145 50% 50%; /* Adjusted Green for Dark Mode */
+    --chart-2: 0 65% 55%; /* Adjusted Red for Dark Mode */
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;

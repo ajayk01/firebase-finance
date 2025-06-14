@@ -26,9 +26,9 @@ interface MonthlySummaryChartProps {
 }
 
 const barColors = {
-  expense: "hsl(var(--chart-2))", 
-  income: "hsl(var(--chart-1))",   
-  investment: "hsl(var(--primary))",
+  expense: "hsl(var(--chart-2))", // Now Red
+  income: "hsl(var(--chart-1))",   // Now Green
+  investment: "hsl(var(--primary))", // Blue
 };
 
 const CustomTooltipContent = ({ active, payload, label }: ComponentProps<typeof Tooltip>) => {
