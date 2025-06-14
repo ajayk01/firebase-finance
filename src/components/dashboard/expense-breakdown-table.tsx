@@ -29,13 +29,12 @@ interface ExpenseBreakdownTableProps {
   selectedMonth?: string;
   onMonthChange?: (value: string) => void;
   months?: MonthOption[];
-  data: ExpenseItem[]; // Changed from optional, now expects data from parent
+  data: ExpenseItem[]; 
 }
 
 export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, months, data }: ExpenseBreakdownTableProps) {
-  // Data is now passed directly, already filtered by month for the main expense table.
-  // For the credit card table instance, it might receive a default month's data or specific credit card transaction data.
-  const displayedData = data;
+  
+  const displayedData = [...data].sort((a, b) => a.category.localeCompare(b.category));
 
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -73,7 +72,7 @@ export function ExpenseBreakdownTable({ title, selectedMonth, onMonthChange, mon
                 <TableRow key={`${item.month}-${item.category}-${item.subCategory}-${index}`}>
                   <TableCell className="font-medium py-3 px-4">{item.category}</TableCell>
                   <TableCell className="py-3 px-4">{item.subCategory}</TableCell>
-                  <TableCell className="text-right py-3 px-4 text-red-600 font-medium">{item.expense}</TableCell>
+                  <TableCell className="text-right py-3 px-4 text-red-600 font-medium">₹{item.expense.replace('₹', '')}</TableCell>
                 </TableRow>
               ))
             ) : (
