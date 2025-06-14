@@ -32,11 +32,11 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   const textAnchor = cos >= 0 ? 'start' : 'end';
   const labelColor = fill;
 
-  let formattedValue = `$${(value / 1000).toFixed(1)}K`;
-  if (value === 0) formattedValue = '$0K';
-  // Special case for values like 25000 to show $25K instead of $25.0K
+  let formattedValue = `₹${(value / 1000).toFixed(1)}K`;
+  if (value === 0) formattedValue = '₹0K';
+  // Special case for values like 25000 to show ₹25K instead of ₹25.0K
   if (value % 1000 === 0 && value !== 0) {
-    formattedValue = `$${(value / 1000).toFixed(0)}K`;
+    formattedValue = `₹${(value / 1000).toFixed(0)}K`;
   }
 
 
@@ -59,7 +59,7 @@ export function ExpensePieChart() {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="items-center pb-3">
-        <CardTitle className="text-2xl font-bold">Yearly Expense</CardTitle>
+        <CardTitle className="text-2xl font-bold">Selected Month expense</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Breakdown By Category</CardDescription>
       </CardHeader>
       <CardContent className="h-[420px] relative"> {/* Adjusted height */}
@@ -86,10 +86,11 @@ export function ExpensePieChart() {
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <p className="text-3xl font-bold text-foreground">
-            ${(totalAmount / 1000).toFixed(1)}K
+            ₹{(totalAmount / 1000).toFixed(1)}K
           </p>
         </div>
       </CardContent>
     </Card>
   );
 }
+
