@@ -22,7 +22,7 @@ export function StatCard({
   value,
   percentageChange,
   Icon,
-  isPrimary = false,
+  isPrimary = false, // This prop seems unused now for bank details card styling
   logoIcon: LogoIconComponent,
   bankName,
   accountNumber,
@@ -35,7 +35,6 @@ export function StatCard({
     <Card className={cn(
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col",
-      // isPrimary && !showBankDetails ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground", // Removed primary background for bank details
       "bg-card text-card-foreground", // Default background for all cards now
       showBankDetails || showGeneralStats ? "p-4" : ""
     )}>
@@ -43,12 +42,22 @@ export function StatCard({
         <>
           <div className="flex items-center justify-start gap-3 mb-2">
             {LogoIconComponent && <LogoIconComponent className="h-8 w-8 text-primary" />}
-            {bankName && <h3 className="text-lg font-semibold">{bankName}</h3>}
+            {bankName && <h3 className="text-lg font-semibold text-foreground">{bankName}</h3>}
           </div>
           {currentBalanceText ? (
-            <p className="text-xl font-semibold mt-1 text-foreground">₹{currentBalanceText}</p>
+            (() => {
+              const parts = currentBalanceText.split(' : ');
+              const labelPart = parts[0] ? `${parts[0]} :` : '';
+              const valuePart = parts[1] || '';
+              return (
+                <p className="text-xl font-semibold mt-1">
+                  <span className="text-primary">{labelPart} </span>
+                  <span className="text-foreground">₹{valuePart}</span>
+                </p>
+              );
+            })()
           ) : accountNumber ? (
-            <p className="text-2xl font-bold tracking-wider">{accountNumber}</p>
+            <p className="text-2xl font-bold tracking-wider text-foreground">{accountNumber}</p>
           ) : null}
         </>
       ) : showGeneralStats ? (
