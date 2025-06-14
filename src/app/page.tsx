@@ -424,35 +424,35 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">
-            Monthly Financial Summary Chart
-          </h2>
-          <MonthlySummaryChart
-            data={monthlySummaryChartData}
-            selectedYear={selectedSummaryYear}
-            onYearChange={setSelectedSummaryYear}
-            years={availableSummaryYears}
-          />
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">
-            Selected Month Financial Snapshot
-          </h2>
-          <MonthlyMoneyTable
-            data={financialSnapshotTableData}
-            selectedMonth={selectedSummaryDetailMonth}
-            onMonthChange={setSelectedSummaryDetailMonth}
-            months={monthOptions}
-            selectedYear={selectedSummaryYear}
-            onYearChange={setSelectedSummaryYear}
-            years={availableSummaryYears}
-          />
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Monthly Financial Summary Chart
+            </h2>
+            <MonthlySummaryChart
+              data={monthlySummaryChartData}
+              selectedYear={selectedSummaryYear}
+              onYearChange={setSelectedSummaryYear}
+              years={availableSummaryYears}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <h2 className="text-xl font-semibold mb-4">
+              Selected Month Financial Snapshot
+            </h2>
+            <MonthlyMoneyTable
+              data={financialSnapshotTableData}
+              selectedMonth={selectedSummaryDetailMonth}
+              onMonthChange={setSelectedSummaryDetailMonth}
+              months={monthOptions}
+              selectedYear={selectedSummaryYear}
+              onYearChange={setSelectedSummaryYear}
+              years={availableSummaryYears}
+            />
+          </div>
         </div>
 
       </main>
     </div>
   );
 }
-
