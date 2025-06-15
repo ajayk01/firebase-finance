@@ -6,7 +6,7 @@ import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
 import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
-import { Landmark, CreditCard, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useState, useMemo, useEffect } from 'react';
 
 const monthOptions = [
@@ -24,54 +24,15 @@ const monthOptions = [
   { value: "dec", label: "December" },
 ];
 
-// Master source of expense data
-const masterExpenseData = [
-  // January 2024
-  { year: 2024, month: "jan", category: "Office Lease", subCategory: "Monthly Rent", expense: "₹500.00" },
-  { year: 2024, month: "jan", category: "Software", subCategory: "Project Management Tool", expense: "₹150.00" },
-  // February 2024
-  { year: 2024, month: "feb", category: "Utilities", subCategory: "Internet Bill", expense: "₹70.00" },
-  { year: 2024, month: "feb", category: "Travel", subCategory: "Client Meeting Commute", expense: "₹120.00" },
-  { year: 2024, month: "feb", category: "Marketing", subCategory: "Online Ads Feb", expense: "₹300.00" },
-  // March 2024
-  { year: 2024, month: "mar", category: "Office Supplies", subCategory: "Printer Ink & Paper", expense: "₹60.00" },
-  { year: 2024, month: "mar", category: "Professional Dev", subCategory: "Online Course", expense: "₹200.00" },
-  // April 2024
-  { year: 2024, month: "apr", category: "Utilities", subCategory: "Electricity", expense: "₹180.00" },
-  // May 2024
-  { year: 2024, month: "may", category: "Marketing", subCategory: "Flyers", expense: "₹100.00" },
-  // June 2024
-  { year: 2024, month: "jun", category: "Software", subCategory: "Antivirus", expense: "₹50.00" },
-  // July 2024
-  { year: 2024, month: "jul", category: "Office Software", subCategory: "CRM Subscription", expense: "₹99.00" },
-  { year: 2024, month: "jul", category: "Marketing", subCategory: "Social Media Ads", expense: "₹250.00" },
-  { year: 2024, month: "jul", category: "Utilities", subCategory: "Electricity Bill", expense: "₹150.00" },
-  { year: 2024, month: "jul", category: "Office Supplies", subCategory: "Stationery & Printing", expense: "₹45.00" },
-  { year: 2024, month: "jul", category: "Travel", subCategory: "Client Visit Fuel", expense: "₹80.00" },
-  { year: 2024, month: "jul", category: "Utilities", subCategory: "Internet Services", expense: "₹75.00" },
-  { year: 2024, month: "jul", category: "Software Tools", subCategory: "Accounting Software", expense: "₹49.00" },
-  { year: 2024, month: "jul", category: "Marketing", subCategory: "Content Creation Services", expense: "₹180.00" },
-  { year: 2024, month: "jul", category: "Office Supplies", subCategory: "Coffee & Team Snacks", expense: "₹120.00" },
-  { year: 2024, month: "jul", category: "Travel", subCategory: "Local Commute Reimbursement", expense: "₹50.00" },
-  // August 2024
-  { year: 2024, month: "aug", category: "Team Event", subCategory: "Lunch", expense: "₹220.00" },
-  // September 2024
-  { year: 2024, month: "sep", category: "Hardware", subCategory: "New Mouse", expense: "₹30.00" },
-  // October 2024
-  { year: 2024, month: "oct", category: "Marketing", subCategory: "SEO Consultation", expense: "₹400.00" },
-  // November 2024
-  { year: 2024, month: "nov", category: "Utilities", subCategory: "Water Bill", expense: "₹40.00" },
-  // December 2024
-  { year: 2024, month: "dec", category: "Client Gifts", subCategory: "Holiday Gifts", expense: "₹350.00" },
-  // July 2023 Data
-  { year: 2023, month: "jul", category: "Office Software", subCategory: "CRM Subscription", expense: "₹89.00" },
-  { year: 2023, month: "jul", category: "Marketing", subCategory: "Social Media Ads", expense: "₹200.00" },
-  { year: 2023, month: "jul", category: "Utilities", subCategory: "Old Electricity Bill", expense: "₹130.00" },
-  // August 2023 Data
-  { year: 2023, month: "aug", category: "Travel", subCategory: "Old Client Visit", expense: "₹100.00" },
-  { year: 2023, month: "aug", category: "Office Supplies", subCategory: "Old Stationery", expense: "₹30.00" },
-];
+interface ExpenseItem {
+  year: number;
+  month: string;
+  category: string;
+  subCategory: string;
+  expense: string;
+}
 
+// Master source of income data (remains hardcoded for now)
 const masterIncomeData = [
   // July 2024 Income
   { year: 2024, month: "jul", category: "Client Project Alpha", subCategory: "Milestone 1 Payment", expense: "₹12000.00" },
@@ -93,6 +54,7 @@ const masterIncomeData = [
   { year: 2023, month: "jul", category: "Consulting Services", subCategory: "Old Client Z", expense: "₹6000.00" },
 ];
 
+// Master source of investment data (remains hardcoded for now)
 const masterInvestmentData = [
   // July 2024 Investments
   { year: 2024, month: "jul", category: "Stocks", subCategory: "Tech Stocks ETF", expense: "₹5000.00" },
@@ -116,7 +78,7 @@ interface BankAccount {
   id: string;
   name: string;
   balance: number;
-  logo: string; // Optional logo URL
+  logoUrl?: string;
 }
 
 interface CreditCardAccount {
@@ -133,8 +95,10 @@ const parseCurrency = (currencyStr: string): number => {
 };
 
 const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory?: string, expense: string }>) => {
+  if (!data || data.length === 0) return [{ value: new Date().getFullYear(), label: new Date().getFullYear().toString() }];
   const uniqueYears = Array.from(new Set(data.map(item => item.year)))
     .sort((a, b) => b - a);
+  if (uniqueYears.length === 0) return [{ value: new Date().getFullYear(), label: new Date().getFullYear().toString() }];
   return uniqueYears.map(year => ({ value: year, label: year.toString() }));
 };
 
@@ -142,6 +106,7 @@ export default function DashboardPage() {
   // API Data States
   const [apiBankAccounts, setApiBankAccounts] = useState<BankAccount[]>([]);
   const [apiCreditCards, setApiCreditCards] = useState<CreditCardAccount[]>([]);
+  const [apiMonthlyExpenses, setApiMonthlyExpenses] = useState<ExpenseItem[]>([]);
   const [isFinancialDetailsLoading, setIsFinancialDetailsLoading] = useState<boolean>(true);
   const [financialDetailsError, setFinancialDetailsError] = useState<string | null>(null);
 
@@ -152,16 +117,19 @@ export default function DashboardPage() {
       try {
         const response = await fetch('/api/financial-details');
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({})); // Try to parse error, default to empty object
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error || response.statusText}`);
         }
         const data = await response.json();
         setApiBankAccounts(data.bankAccounts || []);
         setApiCreditCards(data.creditCards || []);
+        setApiMonthlyExpenses(data.monthlyExpenses || []);
       } catch (error) {
         console.error("Failed to fetch financial details:", error);
         setFinancialDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
         setApiBankAccounts([]);
         setApiCreditCards([]);
+        setApiMonthlyExpenses([]);
       } finally {
         setIsFinancialDetailsLoading(false);
       }
@@ -171,9 +139,18 @@ export default function DashboardPage() {
 
 
   // Expense States
-  const availableExpenseYears = useMemo(() => getAvailableYears(masterExpenseData), []);
+  const availableExpenseYears = useMemo(() => getAvailableYears(apiMonthlyExpenses), [apiMonthlyExpenses]);
   const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
   const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(availableExpenseYears[0]?.value || new Date().getFullYear());
+  
+  useEffect(() => {
+    if (availableExpenseYears.length > 0 && !availableExpenseYears.find(y => y.value === selectedExpenseYear)) {
+      setSelectedExpenseYear(availableExpenseYears[0].value);
+    } else if (availableExpenseYears.length === 0) {
+      setSelectedExpenseYear(new Date().getFullYear());
+    }
+  }, [availableExpenseYears, selectedExpenseYear]);
+
 
   // Income States
   const availableIncomeYears = useMemo(() => getAvailableYears(masterIncomeData), []);
@@ -186,25 +163,36 @@ export default function DashboardPage() {
   const [selectedInvestmentYear, setSelectedInvestmentYear] = useState<number>(availableInvestmentYears[0]?.value || new Date().getFullYear());
 
   // Summary Chart & Table States
-  const allYearsFromAllData = useMemo(() => [
-    ...new Set([
-      ...masterExpenseData.map(d => d.year),
+  const allYearsFromAllData = useMemo(() => {
+    const years = new Set([
+      ...apiMonthlyExpenses.map(d => d.year),
       ...masterIncomeData.map(d => d.year),
       ...masterInvestmentData.map(d => d.year),
-    ])
-  ].sort((a,b) => b - a), []);
+    ]);
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
+  }, [apiMonthlyExpenses, masterIncomeData, masterInvestmentData]);
+
   const availableSummaryYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
   const [selectedSummaryYear, setSelectedSummaryYear] = useState<number>(availableSummaryYears[0]?.value || new Date().getFullYear());
   const [selectedSummaryDetailMonth, setSelectedSummaryDetailMonth] = useState<string>("jul");
 
+  useEffect(() => {
+    if (availableSummaryYears.length > 0 && !availableSummaryYears.find(y => y.value === selectedSummaryYear)) {
+      setSelectedSummaryYear(availableSummaryYears[0].value);
+    } else if (availableSummaryYears.length === 0) {
+      setSelectedSummaryYear(new Date().getFullYear());
+    }
+  }, [availableSummaryYears, selectedSummaryYear]);
+
 
   // Expense Data Processing
   const currentMonthExpenseTableData = useMemo(() => {
-    return masterExpenseData.filter(item => item.month === selectedExpenseMonth && item.year === selectedExpenseYear);
-  }, [selectedExpenseMonth, selectedExpenseYear]);
+    return apiMonthlyExpenses.filter(item => item.month === selectedExpenseMonth && item.year === selectedExpenseYear);
+  }, [selectedExpenseMonth, selectedExpenseYear, apiMonthlyExpenses]);
 
   const currentMonthExpensePieData = useMemo(() => {
-    const monthlyExpenses = masterExpenseData.filter(item => item.month === selectedExpenseMonth && item.year === selectedExpenseYear);
+    const monthlyExpenses = apiMonthlyExpenses.filter(item => item.month === selectedExpenseMonth && item.year === selectedExpenseYear);
     const aggregated: { [key: string]: number } = {};
     monthlyExpenses.forEach(item => {
       const value = parseCurrency(item.expense);
@@ -215,7 +203,7 @@ export default function DashboardPage() {
       }
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
-  }, [selectedExpenseMonth, selectedExpenseYear]);
+  }, [selectedExpenseMonth, selectedExpenseYear, apiMonthlyExpenses]);
 
   // Income Data Processing
   const currentMonthIncomeTableData = useMemo(() => {
@@ -260,7 +248,7 @@ export default function DashboardPage() {
     return monthOptions.map(monthObj => {
       const month = monthObj.value;
 
-      const totalExpense = masterExpenseData
+      const totalExpense = apiMonthlyExpenses
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
@@ -279,12 +267,12 @@ export default function DashboardPage() {
         investment: totalInvestment,
       };
     });
-  }, [selectedSummaryYear]);
+  }, [selectedSummaryYear, apiMonthlyExpenses]);
 
 
   // Data for Selected Month Financial Snapshot Table
   const financialSnapshotTableData = useMemo(() => {
-    const expenseForSelectedMonth = masterExpenseData
+    const expenseForSelectedMonth = apiMonthlyExpenses
       .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
       .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
@@ -314,7 +302,7 @@ export default function DashboardPage() {
       { category: "Total Bank Balance", amount: totalBankBalance, colorClassName: "text-foreground font-medium" },
       { category: "Total Netflows", amount: netFlows, colorClassName: `${netFlowsColorClass} font-medium` },
     ] as FinancialSnapshotItem[];
-  }, [selectedSummaryDetailMonth, selectedSummaryYear, apiBankAccounts]);
+  }, [selectedSummaryDetailMonth, selectedSummaryYear, apiBankAccounts, apiMonthlyExpenses]);
 
 
   return (
@@ -329,7 +317,7 @@ export default function DashboardPage() {
               {financialDetailsError && (
                 <div className="text-red-600 flex items-center justify-center p-4">
                   <AlertCircle className="h-5 w-5 mr-2" />
-                  Error loading bank details: {financialDetailsError}
+                  Error loading bank details: {financialDetailsError.includes("NOTION_BANK_ACCOUNTS_DB_ID") ? "Bank Accounts DB ID not configured." : financialDetailsError}
                 </div>
               )}
               {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length === 0 && (
@@ -343,7 +331,7 @@ export default function DashboardPage() {
                       .map((account) => (
                         <StatCard
                           key={account.id}
-                          logoIcon={account.logo}
+                          bankLogoUrl={account.logoUrl}
                           bankName={account.name}
                           currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
                         />
@@ -360,7 +348,7 @@ export default function DashboardPage() {
               {financialDetailsError && (
                  <div className="text-red-600 flex items-center justify-center p-4">
                    <AlertCircle className="h-5 w-5 mr-2" />
-                   Error loading credit card details: {financialDetailsError}
+                   Error loading credit card details: {financialDetailsError.includes("NOTION_CREDIT_CARDS_DB_ID") ? "Credit Cards DB ID not configured." : financialDetailsError}
                  </div>
               )}
               {!isFinancialDetailsLoading && !financialDetailsError && apiCreditCards.length === 0 && (
@@ -371,7 +359,7 @@ export default function DashboardPage() {
                   {apiCreditCards.map((card) => (
                     <StatCard
                       key={card.id}
-                      creditCardLogoIcon={card.logo} // Hardcoded for now
+                      creditCardLogoIcon={card.logo} 
                       creditCardName={card.name}
                       usedAmountText={`Used : ${card.usedAmount.toLocaleString('en-IN')}`}
                       totalLimitText={`Total Limit : ${card.totalLimit.toLocaleString('en-IN')}`}
@@ -387,27 +375,36 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4">
             Monthly Expenses Overview
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <ExpenseBreakdownTable
-                title="Expense Breakdown"
-                selectedMonth={selectedExpenseMonth}
-                onMonthChange={setSelectedExpenseMonth}
-                months={monthOptions}
-                selectedYear={selectedExpenseYear}
-                onYearChange={setSelectedExpenseYear}
-                years={availableExpenseYears}
-                data={currentMonthExpenseTableData}
-              />
+          {isFinancialDetailsLoading && <p className="text-center text-muted-foreground py-4">Loading expense data...</p>}
+          {financialDetailsError && !isFinancialDetailsLoading && (
+            <div className="text-red-600 flex items-center justify-center p-4 bg-red-50 rounded-md">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Error loading expense data: {financialDetailsError.includes("NOTION_MONTHLY_EXPENSES_DB_ID") ? "Monthly Expenses DB ID not configured." : financialDetailsError}
             </div>
-            <div>
-              <ExpensePieChart
-                data={currentMonthExpensePieData}
-                chartTitle="Selected Month Expense"
-                chartDescription="Breakdown By Category"
-              />
+          )}
+          {!isFinancialDetailsLoading && !financialDetailsError && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <ExpenseBreakdownTable
+                  title="Expense Breakdown"
+                  selectedMonth={selectedExpenseMonth}
+                  onMonthChange={setSelectedExpenseMonth}
+                  months={monthOptions}
+                  selectedYear={selectedExpenseYear}
+                  onYearChange={setSelectedExpenseYear}
+                  years={availableExpenseYears}
+                  data={currentMonthExpenseTableData}
+                />
+              </div>
+              <div>
+                <ExpensePieChart
+                  data={currentMonthExpensePieData}
+                  chartTitle="Selected Month Expense"
+                  chartDescription="Breakdown By Category"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-8">
