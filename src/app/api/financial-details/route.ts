@@ -8,9 +8,8 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const NOTION_BANK_ACCOUNTS_DB_ID = process.env.NOTION_BANK_ACCOUNTS_DB_ID;
 const NOTION_CREDIT_CARDS_DB_ID = process.env.NOTION_CREDIT_CARDS_DB_ID;
 const EXP_SUB_CATEGORY_DB_ID = process.env.EXP_SUB_CATEGORY_DB_ID;
-const NOTION_MONTHLY_EXPENSES_DB_ID = process.env.NOTION_MONTHLY_EXPENSES_DB_ID;
-const NOTION_MONTHLY_INCOME_DB_ID = process.env.NOTION_MONTHLY_INCOME_DB_ID;
-const NOTION_MONTHLY_INVESTMENTS_DB_ID = process.env.NOTION_MONTHLY_INVESTMENTS_DB_ID;
+const INC_SUB_CATEGORY_DB_ID = process.env.INC_SUB_CATEGORY_DB_ID;
+const INVESTMENT_DB_ID = process.env.INVESTMENT_DB_ID;
 
 
 interface NotionPage {
@@ -26,18 +25,6 @@ interface ExpenseItem {
   subCategory: string;
   expense: string;
 }
-
-// Helper to safely get text from Notion title or rich text properties
-const getNotionText = (property: any, type: 'title' | 'rich_text' = 'title'): string => {
-  if (!property) return "";
-  if (type === 'title' && property.title && property.title.length > 0) {
-    return property.title[0].plain_text;
-  }
-  if (type === 'rich_text' && property.rich_text && property.rich_text.length > 0) {
-    return property.rich_text[0].plain_text;
-  }
-  return "";
-};
 
 async function fetchBankAccountsFromNotion()
 {
@@ -139,6 +126,84 @@ async function fetchMonthlyExpensesFromNotion(): Promise<ExpenseItem[]> {
   }
 }
 
+async function fetchMonthlyIncomesFromNotion(): Promise<ExpenseItem[]> {
+  if (!INC_SUB_CATEGORY_DB_ID) {
+    throw new Error("EXP_SUB_CATEGORY_DB_ID is not set in environment variables.");
+  }
+  try {
+    const response = await notion.databases.query({
+      database_id: INC_SUB_CATEGORY_DB_ID,
+      // Add sorts here if needed, e.g., by Year then Month
+    });
+
+      const items = await Promise.all(response.results.map(async (page) => {
+      const prop = (page as any).properties;
+      const expense = prop["Total Incomes"]["formula"]["number"];
+      if(expense == 0)
+      {
+        return null; 
+      }
+      const subCategoryName = prop["Sub Category"]["title"][0]["plain_text"];
+      let categoryName = "";
+
+      // Await the category page fetch
+      if (prop["Category"]?.relation?.[0]?.id) {
+        const categoryPage = await notion.pages.retrieve({ page_id: prop["Category"].relation[0].id });
+        categoryName = (categoryPage as any)["properties"]["Category"]["title"][0]["plain_text"];
+      }
+
+      return {
+        year: 2025,
+        month: 'jun', // Or get from your data
+        category: categoryName,
+        subCategory: subCategoryName || "",
+        expense: `₹${expense}`,
+      };
+    }));
+
+    return items.filter(item => item !== null) as ExpenseItem[];
+  } catch (error) {
+    console.error("Error fetching monthly income from Notion:", error);
+    throw new Error("Failed to fetch monthly income from Notion.");
+  }
+}
+
+async function fetchMonthlyInvFromNotion(): Promise<ExpenseItem[]> {
+  if (!INVESTMENT_DB_ID) {
+    throw new Error("EXP_SUB_CATEGORY_DB_ID is not set in environment variables.");
+  }
+  try {
+    const response = await notion.databases.query({
+      database_id: INVESTMENT_DB_ID,
+      // Add sorts here if needed, e.g., by Year then Month
+    });
+
+      const items = await Promise.all(response.results.map(async (page) => {
+      const prop = (page as any).properties;
+      const expense = prop["This Month Investments"]["formula"]["number"];
+      if(expense == 0)
+      {
+        return null; 
+      }
+      //prop["Sub Category"]["title"][0]["plain_text"];
+      const categoryName = prop["Investment Account"]["title"][0]["plain_text"] || "";
+      return {
+        year: 2025,
+        month: 'jun', // Or get from your data
+        category: categoryName,
+        subCategory: "",
+        expense: `₹${expense}`,
+      };
+    }));
+
+    return items.filter(item => item !== null) as ExpenseItem[];
+  } catch (error) {
+    console.error("Error fetching monthly income from Notion:", error);
+    throw new Error("Failed to fetch monthly income from Notion.");
+  }
+}
+
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -150,6 +215,8 @@ export async function GET(request: NextRequest) {
       { name: "NOTION_BANK_ACCOUNTS_DB_ID", value: NOTION_BANK_ACCOUNTS_DB_ID },
       { name: "NOTION_CREDIT_CARDS_DB_ID", value: NOTION_CREDIT_CARDS_DB_ID },
       { name: "EXP_SUB_CATEGORY_DB_ID", value: EXP_SUB_CATEGORY_DB_ID },
+      { name: "INC_SUB_CATEGORY_DB_ID", value: INC_SUB_CATEGORY_DB_ID },
+      { name: "INVESTMENT_DB_ID", value: INVESTMENT_DB_ID },
     ];
 
     for (const dbId of requiredDbIds) {
@@ -170,8 +237,8 @@ export async function GET(request: NextRequest) {
       fetchBankAccountsFromNotion(),
       fetchCreditCardsFromNotion(),
       fetchMonthlyExpensesFromNotion(),
-      fetchMonthlyExpensesFromNotion(),
-      fetchMonthlyExpensesFromNotion(),
+      fetchMonthlyIncomesFromNotion(),
+      fetchMonthlyInvFromNotion(),
     ]);
 
     return NextResponse.json({
