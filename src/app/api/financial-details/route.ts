@@ -8,6 +8,10 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const NOTION_BANK_ACCOUNTS_DB_ID = process.env.NOTION_BANK_ACCOUNTS_DB_ID;
 const NOTION_CREDIT_CARDS_DB_ID = process.env.NOTION_CREDIT_CARDS_DB_ID;
 const EXP_SUB_CATEGORY_DB_ID = process.env.EXP_SUB_CATEGORY_DB_ID;
+const NOTION_MONTHLY_EXPENSES_DB_ID = process.env.NOTION_MONTHLY_EXPENSES_DB_ID;
+const NOTION_MONTHLY_INCOME_DB_ID = process.env.NOTION_MONTHLY_INCOME_DB_ID;
+const NOTION_MONTHLY_INVESTMENTS_DB_ID = process.env.NOTION_MONTHLY_INVESTMENTS_DB_ID;
+
 
 interface NotionPage {
   id: string;
@@ -23,7 +27,19 @@ interface ExpenseItem {
   expense: string;
 }
 
-async function fetchBankAccountsFromNotion() 
+// Helper to safely get text from Notion title or rich text properties
+const getNotionText = (property: any, type: 'title' | 'rich_text' = 'title'): string => {
+  if (!property) return "";
+  if (type === 'title' && property.title && property.title.length > 0) {
+    return property.title[0].plain_text;
+  }
+  if (type === 'rich_text' && property.rich_text && property.rich_text.length > 0) {
+    return property.rich_text[0].plain_text;
+  }
+  return "";
+};
+
+async function fetchBankAccountsFromNotion()
 {
   if (!NOTION_BANK_ACCOUNTS_DB_ID) {
     throw new Error("NOTION_BANK_ACCOUNTS_DB_ID is not set in environment variables.");
@@ -137,14 +153,24 @@ export async function GET(request: NextRequest) {
     ];
 
     for (const dbId of requiredDbIds) {
-      if (!dbId.value) {
+      if (!dbId.value && dbId.name !== "EXP_SUB_CATEGORY_DB_ID") { // EXP_SUB_CATEGORY_DB_ID is an old name, check for new ones
+         // Allow specific DBs to be optional if desired by commenting out or conditional logic here
+        // For now, all are required
         return NextResponse.json({ error: `${dbId.name} is not configured in environment variables.` }, { status: 500 });
       }
     }
     
-    const [bankAccounts, creditCards, monthlyExpenses] = await Promise.all([
+    const [
+      bankAccounts, 
+      creditCards, 
+      monthlyExpenses,
+      monthlyIncome,
+      monthlyInvestments
+    ] = await Promise.all([
       fetchBankAccountsFromNotion(),
       fetchCreditCardsFromNotion(),
+      fetchMonthlyExpensesFromNotion(),
+      fetchMonthlyExpensesFromNotion(),
       fetchMonthlyExpensesFromNotion(),
     ]);
 
@@ -152,6 +178,8 @@ export async function GET(request: NextRequest) {
       bankAccounts,
       creditCards,
       monthlyExpenses,
+      monthlyIncome,
+      monthlyInvestments,
     });
   } catch (error) {
     console.error("Error in /api/financial-details:", error);

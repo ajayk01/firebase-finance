@@ -24,55 +24,13 @@ const monthOptions = [
   { value: "dec", label: "December" },
 ];
 
-interface ExpenseItem {
+interface ExpenseItem { // Reused for income and investments as structure is similar
   year: number;
   month: string;
   category: string;
   subCategory: string;
-  expense: string;
+  expense: string; // "expense" key used for amount string (e.g., "₹100.00")
 }
-
-// Master source of income data (remains hardcoded for now)
-const masterIncomeData = [
-  // July 2024 Income
-  { year: 2024, month: "jul", category: "Client Project Alpha", subCategory: "Milestone 1 Payment", expense: "₹12000.00" },
-  { year: 2024, month: "jul", category: "Consulting Services", subCategory: "Hourly Rate - Client X", expense: "₹7500.00" },
-  { year: 2024, month: "jul", category: "Product Sales", subCategory: "Software License", expense: "₹3000.00" },
-  { year: 2024, month: "jul", category: "Client Project Alpha", subCategory: "Milestone 2 Payment", expense: "₹15000.00" },
-  // June 2024 Income
-  { year: 2024, month: "jun", category: "Consulting Services", subCategory: "Retainer - Client Y", expense: "₹10000.00" },
-  { year: 2024, month: "jun", category: "Product Sales", subCategory: "Ebook Sales", expense: "₹500.00" },
-  { year: 2024, month: "jun", category: "Client Project Beta", subCategory: "Initial Payment", expense: "₹18000.00" },
-  // May 2024 Income
-  { year: 2024, month: "may", category: "Client Project Gamma", subCategory: "Phase 1", expense: "₹22000.00" },
-  // August 2024
-  { year: 2024, month: "aug", category: "Product Sales", subCategory: "Online Course", expense: "₹4500.00" },
-  // January 2023 Income
-  { year: 2023, month: "jan", category: "Old Project Delta", subCategory: "Phase 1", expense: "₹5000.00" },
-  // July 2023 Income
-  { year: 2023, month: "jul", category: "Old Project Omega", subCategory: "Final Settlement", expense: "₹8000.00" },
-  { year: 2023, month: "jul", category: "Consulting Services", subCategory: "Old Client Z", expense: "₹6000.00" },
-];
-
-// Master source of investment data (remains hardcoded for now)
-const masterInvestmentData = [
-  // July 2024 Investments
-  { year: 2024, month: "jul", category: "Stocks", subCategory: "Tech Stocks ETF", expense: "₹5000.00" },
-  { year: 2024, month: "jul", category: "Mutual Funds", subCategory: "Balanced Fund", expense: "₹3000.00" },
-  { year: 2024, month: "jul", category: "Real Estate", subCategory: "REIT Investment", expense: "₹10000.00" },
-  // June 2024 Investments
-  { year: 2024, month: "jun", category: "Stocks", subCategory: "Blue Chip Stocks", expense: "₹7000.00" },
-  { year: 2024, month: "jun", category: "Bonds", subCategory: "Government Bonds", expense: "₹4000.00" },
-  // August 2024
-  { year: 2024, month: "aug", category: "Crypto", subCategory: "Ethereum", expense: "₹2500.00" },
-  // January 2023 Investments
-  { year: 2023, month: "jan", category: "Gold", subCategory: "SGB", expense: "₹1000.00" },
-  // July 2023 Investments
-  { year: 2023, month: "jul", category: "Mutual Funds", subCategory: "Index Fund", expense: "₹2500.00" },
-  { year: 2023, month: "jul", category: "Stocks", subCategory: "Pharma Stock", expense: "₹6000.00" },
-  // August 2023
-  { year: 2023, month: "aug", category: "Crypto", subCategory: "Bitcoin", expense: "₹1500.00" },
-];
 
 interface BankAccount {
   id: string;
@@ -107,6 +65,8 @@ export default function DashboardPage() {
   const [apiBankAccounts, setApiBankAccounts] = useState<BankAccount[]>([]);
   const [apiCreditCards, setApiCreditCards] = useState<CreditCardAccount[]>([]);
   const [apiMonthlyExpenses, setApiMonthlyExpenses] = useState<ExpenseItem[]>([]);
+  const [apiMonthlyIncome, setApiMonthlyIncome] = useState<ExpenseItem[]>([]);
+  const [apiMonthlyInvestments, setApiMonthlyInvestments] = useState<ExpenseItem[]>([]);
   const [isFinancialDetailsLoading, setIsFinancialDetailsLoading] = useState<boolean>(true);
   const [financialDetailsError, setFinancialDetailsError] = useState<string | null>(null);
 
@@ -124,12 +84,16 @@ export default function DashboardPage() {
         setApiBankAccounts(data.bankAccounts || []);
         setApiCreditCards(data.creditCards || []);
         setApiMonthlyExpenses(data.monthlyExpenses || []);
+        setApiMonthlyIncome(data.monthlyIncome || []);
+        setApiMonthlyInvestments(data.monthlyInvestments || []);
       } catch (error) {
         console.error("Failed to fetch financial details:", error);
         setFinancialDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
         setApiBankAccounts([]);
         setApiCreditCards([]);
         setApiMonthlyExpenses([]);
+        setApiMonthlyIncome([]);
+        setApiMonthlyInvestments([]);
       } finally {
         setIsFinancialDetailsLoading(false);
       }
@@ -153,25 +117,40 @@ export default function DashboardPage() {
 
 
   // Income States
-  const availableIncomeYears = useMemo(() => getAvailableYears(masterIncomeData), []);
+  const availableIncomeYears = useMemo(() => getAvailableYears(apiMonthlyIncome), [apiMonthlyIncome]);
   const [selectedIncomeMonth, setSelectedIncomeMonth] = useState<string>("jul");
   const [selectedIncomeYear, setSelectedIncomeYear] = useState<number>(availableIncomeYears[0]?.value || new Date().getFullYear());
+   useEffect(() => {
+    if (availableIncomeYears.length > 0 && !availableIncomeYears.find(y => y.value === selectedIncomeYear)) {
+      setSelectedIncomeYear(availableIncomeYears[0].value);
+    } else if (availableIncomeYears.length === 0) {
+      setSelectedIncomeYear(new Date().getFullYear());
+    }
+  }, [availableIncomeYears, selectedIncomeYear]);
+
 
   // Investment States
-  const availableInvestmentYears = useMemo(() => getAvailableYears(masterInvestmentData), []);
+  const availableInvestmentYears = useMemo(() => getAvailableYears(apiMonthlyInvestments), [apiMonthlyInvestments]);
   const [selectedInvestmentMonth, setSelectedInvestmentMonth] = useState<string>("jul");
   const [selectedInvestmentYear, setSelectedInvestmentYear] = useState<number>(availableInvestmentYears[0]?.value || new Date().getFullYear());
+  useEffect(() => {
+    if (availableInvestmentYears.length > 0 && !availableInvestmentYears.find(y => y.value === selectedInvestmentYear)) {
+      setSelectedInvestmentYear(availableInvestmentYears[0].value);
+    } else if (availableInvestmentYears.length === 0) {
+      setSelectedInvestmentYear(new Date().getFullYear());
+    }
+  }, [availableInvestmentYears, selectedInvestmentYear]);
 
   // Summary Chart & Table States
   const allYearsFromAllData = useMemo(() => {
     const years = new Set([
       ...apiMonthlyExpenses.map(d => d.year),
-      ...masterIncomeData.map(d => d.year),
-      ...masterInvestmentData.map(d => d.year),
+      ...apiMonthlyIncome.map(d => d.year),
+      ...apiMonthlyInvestments.map(d => d.year),
     ]);
     const sortedYears = Array.from(years).sort((a, b) => b - a);
     return sortedYears.length > 0 ? sortedYears : [new Date().getFullYear()];
-  }, [apiMonthlyExpenses, masterIncomeData, masterInvestmentData]);
+  }, [apiMonthlyExpenses, apiMonthlyIncome, apiMonthlyInvestments]);
 
   const availableSummaryYears = useMemo(() => allYearsFromAllData.map(year => ({ value: year, label: year.toString() })), [allYearsFromAllData]);
   const [selectedSummaryYear, setSelectedSummaryYear] = useState<number>(availableSummaryYears[0]?.value || new Date().getFullYear());
@@ -207,11 +186,11 @@ export default function DashboardPage() {
 
   // Income Data Processing
   const currentMonthIncomeTableData = useMemo(() => {
-    return masterIncomeData.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
-  }, [selectedIncomeMonth, selectedIncomeYear]);
+    return apiMonthlyIncome.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
+  }, [selectedIncomeMonth, selectedIncomeYear, apiMonthlyIncome]);
 
   const currentMonthIncomePieData = useMemo(() => {
-    const monthlyIncome = masterIncomeData.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
+    const monthlyIncome = apiMonthlyIncome.filter(item => item.month === selectedIncomeMonth && item.year === selectedIncomeYear);
     const aggregated: { [key: string]: number } = {};
     monthlyIncome.forEach(item => {
       const value = parseCurrency(item.expense);
@@ -222,15 +201,15 @@ export default function DashboardPage() {
       }
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
-  }, [selectedIncomeMonth, selectedIncomeYear]);
+  }, [selectedIncomeMonth, selectedIncomeYear, apiMonthlyIncome]);
 
   // Investment Data Processing
   const currentMonthInvestmentTableData = useMemo(() => {
-    return masterInvestmentData.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
-  }, [selectedInvestmentMonth, selectedInvestmentYear]);
+    return apiMonthlyInvestments.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
+  }, [selectedInvestmentMonth, selectedInvestmentYear, apiMonthlyInvestments]);
 
   const currentMonthInvestmentPieData = useMemo(() => {
-    const monthlyInvestment = masterInvestmentData.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
+    const monthlyInvestment = apiMonthlyInvestments.filter(item => item.month === selectedInvestmentMonth && item.year === selectedInvestmentYear);
     const aggregated: { [key: string]: number } = {};
     monthlyInvestment.forEach(item => {
       const value = parseCurrency(item.expense);
@@ -241,7 +220,7 @@ export default function DashboardPage() {
       }
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
-  }, [selectedInvestmentMonth, selectedInvestmentYear]);
+  }, [selectedInvestmentMonth, selectedInvestmentYear, apiMonthlyInvestments]);
 
   // Data for Monthly Summary Chart (12 months)
   const monthlySummaryChartData = useMemo(() => {
@@ -252,11 +231,11 @@ export default function DashboardPage() {
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
-      const totalIncome = masterIncomeData
+      const totalIncome = apiMonthlyIncome
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
-      const totalInvestment = masterInvestmentData
+      const totalInvestment = apiMonthlyInvestments
         .filter(item => item.month === month && item.year === selectedSummaryYear)
         .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
@@ -267,7 +246,7 @@ export default function DashboardPage() {
         investment: totalInvestment,
       };
     });
-  }, [selectedSummaryYear, apiMonthlyExpenses]);
+  }, [selectedSummaryYear, apiMonthlyExpenses, apiMonthlyIncome, apiMonthlyInvestments]);
 
 
   // Data for Selected Month Financial Snapshot Table
@@ -276,11 +255,11 @@ export default function DashboardPage() {
       .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
       .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
-    const incomeForSelectedMonth = masterIncomeData
+    const incomeForSelectedMonth = apiMonthlyIncome
       .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
       .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
-    const investmentForSelectedMonth = masterInvestmentData
+    const investmentForSelectedMonth = apiMonthlyInvestments
       .filter(item => item.month === selectedSummaryDetailMonth && item.year === selectedSummaryYear)
       .reduce((sum, item) => sum + parseCurrency(item.expense), 0);
 
@@ -302,7 +281,27 @@ export default function DashboardPage() {
       { category: "Total Bank Balance", amount: totalBankBalance, colorClassName: "text-foreground font-medium" },
       { category: "Total Netflows", amount: netFlows, colorClassName: `${netFlowsColorClass} font-medium` },
     ] as FinancialSnapshotItem[];
-  }, [selectedSummaryDetailMonth, selectedSummaryYear, apiBankAccounts, apiMonthlyExpenses]);
+  }, [selectedSummaryDetailMonth, selectedSummaryYear, apiBankAccounts, apiMonthlyExpenses, apiMonthlyIncome, apiMonthlyInvestments]);
+
+
+  const getLoadingOrErrorMessage = (dataType: string, dbIdName: string) => {
+    if (isFinancialDetailsLoading) return <p className="text-center text-muted-foreground py-4">Loading {dataType}...</p>;
+    if (financialDetailsError) {
+      const isSpecificDbError = financialDetailsError.includes(dbIdName);
+      const displayError = isSpecificDbError ? `${dbIdName.replace(/NOTION_|_DB_ID/g, ' ').replace(/_/g, ' ').trim()} DB ID not configured or error fetching.` : financialDetailsError;
+      return (
+        <div className="text-red-600 flex items-center justify-center p-4 bg-red-50 rounded-md">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          Error loading {dataType}: {displayError}
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const expenseError = getLoadingOrErrorMessage("expense data", "NOTION_MONTHLY_EXPENSES_DB_ID");
+  const incomeError = getLoadingOrErrorMessage("income data", "NOTION_MONTHLY_INCOME_DB_ID");
+  const investmentError = getLoadingOrErrorMessage("investment data", "NOTION_MONTHLY_INVESTMENTS_DB_ID");
 
 
   return (
@@ -314,10 +313,10 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
               {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading bank details...</p>}
-              {financialDetailsError && (
+              {financialDetailsError && !isFinancialDetailsLoading && (
                 <div className="text-red-600 flex items-center justify-center p-4">
                   <AlertCircle className="h-5 w-5 mr-2" />
-                  Error loading bank details: {financialDetailsError.includes("NOTION_BANK_ACCOUNTS_DB_ID") ? "Bank Accounts DB ID not configured." : financialDetailsError}
+                   Error loading bank details: {financialDetailsError.includes("NOTION_BANK_ACCOUNTS_DB_ID") ? "Bank Accounts DB ID not configured." : financialDetailsError}
                 </div>
               )}
               {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length === 0 && (
@@ -327,7 +326,7 @@ export default function DashboardPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiBankAccounts
                       .slice()
-                      .sort((a, b) => b.balance - a.balance) // sort descending by balance
+                      .sort((a, b) => b.balance - a.balance) 
                       .map((account) => (
                         <StatCard
                           key={account.id}
@@ -345,7 +344,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold mb-3">Credit card details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
               {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading credit card details...</p>}
-              {financialDetailsError && (
+              {financialDetailsError && !isFinancialDetailsLoading && (
                  <div className="text-red-600 flex items-center justify-center p-4">
                    <AlertCircle className="h-5 w-5 mr-2" />
                    Error loading credit card details: {financialDetailsError.includes("NOTION_CREDIT_CARDS_DB_ID") ? "Credit Cards DB ID not configured." : financialDetailsError}
@@ -375,14 +374,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4">
             Monthly Expenses Overview
           </h2>
-          {isFinancialDetailsLoading && <p className="text-center text-muted-foreground py-4">Loading expense data...</p>}
-          {financialDetailsError && !isFinancialDetailsLoading && (
-            <div className="text-red-600 flex items-center justify-center p-4 bg-red-50 rounded-md">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Error loading expense data: {financialDetailsError.includes("EXP_SUB_CATEGORY_DB_ID") ? "Monthly Expenses DB ID not configured." : financialDetailsError}
-            </div>
-          )}
-          {!isFinancialDetailsLoading && !financialDetailsError && (
+          {expenseError ? expenseError : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <ExpenseBreakdownTable
@@ -411,64 +403,68 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold mb-4">
             Monthly Income Overview
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <ExpenseBreakdownTable
-                title="Income Breakdown"
-                selectedMonth={selectedIncomeMonth}
-                onMonthChange={setSelectedIncomeMonth}
-                months={monthOptions}
-                selectedYear={selectedIncomeYear}
-                onYearChange={setSelectedIncomeYear}
-                years={availableIncomeYears}
-                data={currentMonthIncomeTableData}
-                amountColumnHeaderText="Income"
-                amountColumnItemTextColorClassName="text-green-600 font-medium"
-                categoryTotalTextColorClassName="text-green-700 font-semibold"
-                grandTotalTextColorClassName="text-green-700"
-              />
+           {incomeError ? incomeError : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <ExpenseBreakdownTable
+                  title="Income Breakdown"
+                  selectedMonth={selectedIncomeMonth}
+                  onMonthChange={setSelectedIncomeMonth}
+                  months={monthOptions}
+                  selectedYear={selectedIncomeYear}
+                  onYearChange={setSelectedIncomeYear}
+                  years={availableIncomeYears}
+                  data={currentMonthIncomeTableData}
+                  amountColumnHeaderText="Income"
+                  amountColumnItemTextColorClassName="text-green-600 font-medium"
+                  categoryTotalTextColorClassName="text-green-700 font-semibold"
+                  grandTotalTextColorClassName="text-green-700"
+                />
+              </div>
+              <div>
+                <ExpensePieChart
+                  data={currentMonthIncomePieData}
+                  chartTitle="Selected Month Income"
+                  chartDescription="Breakdown By Category"
+                />
+              </div>
             </div>
-            <div>
-              <ExpensePieChart
-                data={currentMonthIncomePieData}
-                chartTitle="Selected Month Income"
-                chartDescription="Breakdown By Category"
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">
             Investment Details
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <ExpenseBreakdownTable
-                title="Investment Breakdown"
-                selectedMonth={selectedInvestmentMonth}
-                onMonthChange={setSelectedInvestmentMonth}
-                months={monthOptions}
-                selectedYear={selectedInvestmentYear}
-                onYearChange={setSelectedInvestmentYear}
-                years={availableInvestmentYears}
-                data={currentMonthInvestmentTableData}
-                amountColumnHeaderText="Investment"
-                amountColumnItemTextColorClassName="text-primary font-medium"
-                categoryTotalTextColorClassName="text-primary font-semibold"
-                grandTotalTextColorClassName="text-primary"
+          {investmentError ? investmentError : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <ExpenseBreakdownTable
+                  title="Investment Breakdown"
+                  selectedMonth={selectedInvestmentMonth}
+                  onMonthChange={setSelectedInvestmentMonth}
+                  months={monthOptions}
+                  selectedYear={selectedInvestmentYear}
+                  onYearChange={setSelectedInvestmentYear}
+                  years={availableInvestmentYears}
+                  data={currentMonthInvestmentTableData}
+                  amountColumnHeaderText="Investment"
+                  amountColumnItemTextColorClassName="text-primary font-medium"
+                  categoryTotalTextColorClassName="text-primary font-semibold"
+                  grandTotalTextColorClassName="text-primary"
                 showSubCategoryColumn={false}
                 showCategoryTotalRow={false}
-              />
+                />
+              </div>
+              <div>
+                <ExpensePieChart
+                  data={currentMonthInvestmentPieData}
+                  chartTitle="Selected Month Investments"
+                  chartDescription="Breakdown By Category"
+                />
+              </div>
             </div>
-            <div>
-              <ExpensePieChart
-                data={currentMonthInvestmentPieData}
-                chartTitle="Selected Month Investments"
-                chartDescription="Breakdown By Category"
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-10 gap-6">
