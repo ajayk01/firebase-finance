@@ -78,7 +78,7 @@ interface BankAccount {
   id: string;
   name: string;
   balance: number;
-  logoUrl?: string;
+  logo: string; // Optional logo URL
 }
 
 interface CreditCardAccount {
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                       .map((account) => (
                         <StatCard
                           key={account.id}
-                          bankLogoUrl={account.logoUrl}
+                          logo={account.logo}
                           bankName={account.name}
                           currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`}
                         />
@@ -379,7 +379,7 @@ export default function DashboardPage() {
           {financialDetailsError && !isFinancialDetailsLoading && (
             <div className="text-red-600 flex items-center justify-center p-4 bg-red-50 rounded-md">
               <AlertCircle className="h-5 w-5 mr-2" />
-              Error loading expense data: {financialDetailsError.includes("NOTION_MONTHLY_EXPENSES_DB_ID") ? "Monthly Expenses DB ID not configured." : financialDetailsError}
+              Error loading expense data: {financialDetailsError.includes("EXP_SUB_CATEGORY_DB_ID") ? "Monthly Expenses DB ID not configured." : financialDetailsError}
             </div>
           )}
           {!isFinancialDetailsLoading && !financialDetailsError && (

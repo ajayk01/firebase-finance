@@ -7,7 +7,7 @@ import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const NOTION_BANK_ACCOUNTS_DB_ID = process.env.NOTION_BANK_ACCOUNTS_DB_ID;
 const NOTION_CREDIT_CARDS_DB_ID = process.env.NOTION_CREDIT_CARDS_DB_ID;
-const NOTION_MONTHLY_EXPENSES_DB_ID = process.env.NOTION_MONTHLY_EXPENSES_DB_ID;
+const EXP_SUB_CATEGORY_DB_ID = process.env.EXP_SUB_CATEGORY_DB_ID;
 
 interface NotionPage {
   id: string;
@@ -23,7 +23,8 @@ interface ExpenseItem {
   expense: string;
 }
 
-async function fetchBankAccountsFromNotion() {
+async function fetchBankAccountsFromNotion() 
+{
   if (!NOTION_BANK_ACCOUNTS_DB_ID) {
     throw new Error("NOTION_BANK_ACCOUNTS_DB_ID is not set in environment variables.");
   }
@@ -32,24 +33,16 @@ async function fetchBankAccountsFromNotion() {
       database_id: NOTION_BANK_ACCOUNTS_DB_ID,
     });
     return response.results.map((page) => {
-      const notionPage = page as NotionPage;
-      const accountNameProperty = notionPage.properties?.['Account Name']?.title?.[0]?.plain_text || notionPage.properties?.['Account']?.title?.[0]?.plain_text;
-      const balanceProperty = notionPage.properties?.['Balance']?.number || notionPage.properties?.['Current Balance']?.formula?.number;
-      
-      let logoUrl;
-      if (notionPage.properties?.['Logo URL']?.url) {
-        logoUrl = notionPage.properties['Logo URL'].url;
-      } else if (notionPage.icon?.type === 'external') {
-        logoUrl = notionPage.icon.external.url;
-      } else if (notionPage.icon?.type === 'file') {
-        logoUrl = notionPage.icon.file.url;
-      }
-
+      // Adjust these property names if your Notion database uses different names
+      const accountNameProperty = (page as any).properties?.['Account']["title"][0]["plain_text"] // Assumes 'Account Name' is a Title property
+      const balanceProperty = (page as any).properties?.['Current Balance']["formula"] // Assumes 'Balance' is a Number property
+      const type = (page as any)['icon']['type']
+      const logo = (page as any)['icon'][type]["url"];
       return {
-        id: notionPage.id,
+        id: (page as any).id,
         name: accountNameProperty || "Unnamed Account",
-        balance: balanceProperty || 0,
-        logoUrl: logoUrl,
+        balance: balanceProperty?.number || 0,
+        logo : logo || "",
       };
     });
   } catch (error) {
@@ -68,25 +61,18 @@ async function fetchCreditCardsFromNotion() {
     });
 
     return response.results.map((page) => {
-      const notionPage = page as NotionPage;
-      const cardNameProperty = notionPage.properties?.['Card Name']?.title?.[0]?.plain_text || notionPage.properties?.['Name']?.title?.[0]?.plain_text;
-      const usedAmountProperty = notionPage.properties?.['Used Amount']?.number || notionPage.properties?.['Total Used']?.formula?.number;
-      const totalLimitProperty = notionPage.properties?.['Total Limit']?.number || notionPage.properties?.['Total Limit']?.formula?.number;
-      
-      let logoUrl;
-       if (notionPage.icon?.type === 'external') {
-        logoUrl = notionPage.icon.external.url;
-      } else if (notionPage.icon?.type === 'file') {
-        logoUrl = notionPage.icon.file.url;
-      }
-
-
+      // Adjust these property names if your Notion database uses different names
+      const cardNameProperty = (page as any).properties?.['Name']["title"][0]["plain_text"]; // Assumes 'Card Name' is a Title property
+      const usedAmountProperty = (page as any).properties?.['Total Used']["formula"]; // Assumes 'Used Amount' is a Number property
+      const totalLimitProperty = (page as any).properties?.['Total Limit']["formula"]; // Assumes 'Total Limit' is a Number property
+      const type = (page as any)['icon']['type']
+      const logo = (page as any)['icon'][type]["url"];
       return {
-        id: notionPage.id,
-        name: cardNameProperty || "Unnamed Card",
-        usedAmount: usedAmountProperty || 0,
-        totalLimit: totalLimitProperty || 0,
-        logo: logoUrl || "",
+        id: (page as any).id,
+        name: cardNameProperty  || "Unnamed Card",
+        usedAmount: usedAmountProperty?.number || 0,
+        totalLimit: totalLimitProperty?.number || 0,
+        logo: logo || "",
       };
     });
   } catch (error) {
@@ -96,12 +82,12 @@ async function fetchCreditCardsFromNotion() {
 }
 
 async function fetchMonthlyExpensesFromNotion(): Promise<ExpenseItem[]> {
-  if (!NOTION_MONTHLY_EXPENSES_DB_ID) {
-    throw new Error("NOTION_MONTHLY_EXPENSES_DB_ID is not set in environment variables.");
+  if (!EXP_SUB_CATEGORY_DB_ID) {
+    throw new Error("EXP_SUB_CATEGORY_DB_ID is not set in environment variables.");
   }
   try {
     const response = await notion.databases.query({
-      database_id: NOTION_MONTHLY_EXPENSES_DB_ID,
+      database_id: EXP_SUB_CATEGORY_DB_ID,
       // Add sorts here if needed, e.g., by Year then Month
     });
 
@@ -149,7 +135,7 @@ export async function GET(request: NextRequest) {
     const requiredDbIds = [
       { name: "NOTION_BANK_ACCOUNTS_DB_ID", value: NOTION_BANK_ACCOUNTS_DB_ID },
       { name: "NOTION_CREDIT_CARDS_DB_ID", value: NOTION_CREDIT_CARDS_DB_ID },
-      { name: "NOTION_MONTHLY_EXPENSES_DB_ID", value: NOTION_MONTHLY_EXPENSES_DB_ID },
+      { name: "EXP_SUB_CATEGORY_DB_ID", value: EXP_SUB_CATEGORY_DB_ID },
     ];
 
     for (const dbId of requiredDbIds) {

@@ -13,12 +13,12 @@ interface StatCardProps {
   isPrimary?: boolean;
   dataAiHint?: string;
 
-  bankLogoUrl?: string; // For dynamic bank logos from URL
+  logo?: string;
   bankName?: string;
   currentBalanceText?: string;
-  accountNumber?: string; 
+  accountNumber?: string; // Kept for potential future use, but not primary display if currentBalanceText exists
 
-  creditCardLogoIcon?: string; 
+  creditCardLogoIcon?: string; // Renamed to avoid conflict with CreditCardLogoIconComponent
   creditCardName?: string;
   usedAmountText?: string;
   totalLimitText?: string;
@@ -32,29 +32,28 @@ export function StatCard(props: StatCardProps) {
     Icon,
     isPrimary = false,
     // Bank specific
-    bankLogoUrl,
+    logo: BankLogoIconComponent,
     bankName,
     currentBalanceText,
     accountNumber,
     // Credit Card specific
-    creditCardLogoIcon: CreditCardLogoIconFromProp, 
+    creditCardLogoIcon: CreditCardLogoIconComponentFromProp, // Renamed to avoid conflict
     creditCardName,
     usedAmountText,
     totalLimitText,
   } = props;
 
-  const CreditCardLogoIconComponent = CreditCardLogoIconFromProp ? null : DefaultCreditCardIcon;
-  const BankLogoIconComponent = Landmark;
+  const CreditCardLogoIconComponent = CreditCardLogoIconComponentFromProp || DefaultCreditCardIcon;
 
 
   const showCreditCardDetails = !!(
-    props.creditCardLogoIcon || CreditCardLogoIconComponent ||
+    props.creditCardLogoIcon || // Check existence of the prop itself
     creditCardName ||
     usedAmountText ||
     totalLimitText
   );
 
-  const showBankDetails = !showCreditCardDetails && !!(bankLogoUrl || BankLogoIconComponent || bankName || currentBalanceText || accountNumber);
+  const showBankDetails = !showCreditCardDetails && !!(BankLogoIconComponent || bankName || currentBalanceText || accountNumber);
   const showGeneralStats = !showBankDetails && !showCreditCardDetails && !!(title || value || Icon || percentageChange !== undefined);
 
 
@@ -75,6 +74,7 @@ export function StatCard(props: StatCardProps) {
       "shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl min-h-[8rem]",
       "flex flex-col",
       showBankDetails ? "bg-card text-card-foreground p-4" : "bg-card text-card-foreground p-4",
+      // Removed isPrimary condition for background here, bank details will use default card bg
     )}>
       {showCreditCardDetails ? (
         <>
@@ -84,7 +84,6 @@ export function StatCard(props: StatCardProps) {
                         alt={creditCardName || "credit_card Logo"}
                         className="h-8 w-8 object-contain"
                       />}
-            {!props.creditCardLogoIcon && CreditCardLogoIconComponent && <CreditCardLogoIconComponent className="h-8 w-8 text-primary" />}
             {creditCardName && <h3 className="text-lg font-semibold text-foreground">{creditCardName}</h3>}
           </div>
           {usedAmountText && (
@@ -103,18 +102,12 @@ export function StatCard(props: StatCardProps) {
       ) : showBankDetails ? (
         <>
           <div className="flex items-center justify-start gap-3 mb-2">
-            {bankLogoUrl ? (
-              <Image
-                src={bankLogoUrl}
-                alt={bankName || "Bank Logo"}
-                width={32}
-                height={32}
-                className="object-contain rounded" // Added rounded for potentially non-square logos
-                data-ai-hint="bank logo"
-              />
-            ) : (
-              BankLogoIconComponent && <BankLogoIconComponent className="h-8 w-8 text-primary" />
-            )}
+            {BankLogoIconComponent && <img
+                        src={BankLogoIconComponent}
+                        alt={bankName || "Bank Logo"}
+                        className="h-8 w-8 object-contain"
+                      />
+            }
             {bankName && <h3 className="text-lg font-semibold text-foreground">{bankName}</h3>}
           </div>
           {currentBalanceText ? (
@@ -123,7 +116,7 @@ export function StatCard(props: StatCardProps) {
               const labelPart = parts[0] ? `${parts[0]} :` : '';
               const valuePart = parts[1] || '';
               return (
-                <p className="text-lg font-semibold mt-1"> 
+                <p className="text-lg font-semibold mt-1"> {/* Changed from text-xl to text-lg */}
                   <span className="text-primary">{labelPart} </span>
                   <span className="text-foreground">₹{valuePart}</span>
                 </p>
@@ -139,7 +132,7 @@ export function StatCard(props: StatCardProps) {
         <>
           <CardHeader className={cn(
             "flex flex-row items-center justify-between space-y-0 pb-2 !p-0",
-            isPrimary && !showBankDetails ? "text-primary-foreground" : "" 
+            isPrimary && !showBankDetails ? "text-primary-foreground" : "" // Apply only if primary and not bank details
           )}>
             {title && (
               <CardTitle className={cn(
@@ -186,7 +179,7 @@ export function StatCard(props: StatCardProps) {
           </CardContent>
         </>
       ) : (
-        null 
+        null // Render nothing if no specific content type matches (or to maintain min-height)
       )}
     </Card>
   );
