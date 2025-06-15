@@ -68,29 +68,102 @@ export default function DashboardPage() {
   const [apiMonthlyIncome, setApiMonthlyIncome] = useState<ExpenseItem[]>([]);
   const [apiMonthlyInvestments, setApiMonthlyInvestments] = useState<ExpenseItem[]>([]);
   const [isFinancialDetailsLoading, setIsFinancialDetailsLoading] = useState<boolean>(true);
+
+
+  const [isBankDetailsLoading, setIsBankDetailsLoading] = useState<boolean>(true);
+  const [bankDetailsError, setBankDetailsError] = useState<string | null>(null);
+
+  const [isCreditCardDetailsLoading, setIsCreditCardDetailsLoading] = useState<boolean>(true);
+  const [creditCardDetailsError, setCreditCardDetailsError] = useState<string | null>(null);
+
   const [financialDetailsError, setFinancialDetailsError] = useState<string | null>(null);
+  const availableExpenseYears = useMemo(() => getAvailableYears(apiMonthlyExpenses), [apiMonthlyExpenses]);
+  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
+  const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(availableExpenseYears[0]?.value || new Date().getFullYear());
+  
+  useEffect(() => 
+  {
+    async function fetchBankAccounts()
+    {
+      setIsBankDetailsLoading(true);
+      setBankDetailsError(null);
+      try 
+      {
+        const res = await fetch('/api/bank-details');
+      if (!res.ok)
+        {
+          const errorData = await res.json().catch(() => ({})); // Try to parse error, default to empty object
+          throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.error || res.statusText}`);
+        }
+        const data = await res.json();   
+        setApiBankAccounts(data.bankAccounts || []);
+      }
+      catch (error)
+      {
+        console.error("Failed to fetch bank accounts:", error);
+        setBankDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
+        setApiBankAccounts([]);
+      }
+      finally
+      {
+        setIsBankDetailsLoading(false);
+      }
+    }
+    fetchBankAccounts();
+  }, []);
+
+  useEffect(() => 
+  {
+    async function fetchCreditCardDetails()
+    {
+      setIsCreditCardDetailsLoading(true);
+      setCreditCardDetailsError(null);
+      try 
+      {
+        const res = await fetch('/api/credit-card-details');
+      if (!res.ok)
+        {
+          const errorData = await res.json().catch(() => ({})); // Try to parse error, default to empty object
+          throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.error || res.statusText}`);
+        }
+        const data = await res.json();
+        console.log("credit card data:", data); 
+        setApiCreditCards(data.creditCardDetails || []);
+      }
+      catch (error)
+      {
+        console.error("Failed to fetch credit card details:", error);
+        setCreditCardDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
+        setApiCreditCards([]);
+      }
+      finally
+      {
+        setIsCreditCardDetailsLoading(false);
+      }
+    }
+    fetchCreditCardDetails();
+  }, []);
+
 
   useEffect(() => {
     async function fetchFinancialDetails() {
       setIsFinancialDetailsLoading(true);
       setFinancialDetailsError(null);
       try {
-        const response = await fetch('/api/financial-details');
+        console.log("Fetching financial details for month:", selectedExpenseMonth, "year:", selectedExpenseYear);
+        const response = await fetch(`/api/financial-details?month=${selectedExpenseMonth}&year=${selectedExpenseYear}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({})); // Try to parse error, default to empty object
           throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error || response.statusText}`);
         }
         const data = await response.json();
-        setApiBankAccounts(data.bankAccounts || []);
-        setApiCreditCards(data.creditCards || []);
+        //setApiBankAccounts(data.bankAccounts || []);
         setApiMonthlyExpenses(data.monthlyExpenses || []);
         setApiMonthlyIncome(data.monthlyIncome || []);
         setApiMonthlyInvestments(data.monthlyInvestments || []);
       } catch (error) {
         console.error("Failed to fetch financial details:", error);
-        setFinancialDetailsError(error instanceof Error ? error.message : "An unknown error occurred");
-        setApiBankAccounts([]);
-        setApiCreditCards([]);
+        setFinancialDetailsError(error instanceof Error ? error.message : "An unknown error occurred");        
         setApiMonthlyExpenses([]);
         setApiMonthlyIncome([]);
         setApiMonthlyInvestments([]);
@@ -99,16 +172,11 @@ export default function DashboardPage() {
       }
     }
     fetchFinancialDetails();
-  }, []);
+  }, [selectedExpenseMonth, selectedExpenseYear]);
 
-
-  // Expense States
-  const availableExpenseYears = useMemo(() => getAvailableYears(apiMonthlyExpenses), [apiMonthlyExpenses]);
-  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
-  const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(availableExpenseYears[0]?.value || new Date().getFullYear());
-  
   useEffect(() => {
     if (availableExpenseYears.length > 0 && !availableExpenseYears.find(y => y.value === selectedExpenseYear)) {
+      console.log("in Use Effor")
       setSelectedExpenseYear(availableExpenseYears[0].value);
     } else if (availableExpenseYears.length === 0) {
       setSelectedExpenseYear(new Date().getFullYear());
@@ -312,17 +380,17 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Bank Details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading bank details...</p>}
-              {financialDetailsError && !isFinancialDetailsLoading && (
+              {isBankDetailsLoading && <p className="text-center text-muted-foreground">Loading bank details...</p>}
+              {bankDetailsError && !isBankDetailsLoading && (
                 <div className="text-red-600 flex items-center justify-center p-4">
                   <AlertCircle className="h-5 w-5 mr-2" />
-                   Error loading bank details: {financialDetailsError.includes("NOTION_BANK_ACCOUNTS_DB_ID") ? "Bank Accounts DB ID not configured." : financialDetailsError}
+                   Error loading bank details: {bankDetailsError.includes("NOTION_BANK_ACCOUNTS_DB_ID") ? "Bank Accounts DB ID not configured." : bankDetailsError}
                 </div>
               )}
-              {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length === 0 && (
+              {!isBankDetailsLoading && !bankDetailsError && apiBankAccounts.length === 0 && (
                 <p className="text-center text-muted-foreground">No bank accounts found.</p>
               )}
-              {!isFinancialDetailsLoading && !financialDetailsError && apiBankAccounts.length > 0 && (
+              {!isBankDetailsLoading && !bankDetailsError && apiBankAccounts.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiBankAccounts
                       .slice()
@@ -343,17 +411,17 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Credit card details</h2>
             <div className="bg-muted p-4 rounded-lg shadow-md">
-              {isFinancialDetailsLoading && <p className="text-center text-muted-foreground">Loading credit card details...</p>}
-              {financialDetailsError && !isFinancialDetailsLoading && (
+              {isCreditCardDetailsLoading && <p className="text-center text-muted-foreground">Loading credit card details...</p>}
+              {creditCardDetailsError && !isCreditCardDetailsLoading && (
                  <div className="text-red-600 flex items-center justify-center p-4">
                    <AlertCircle className="h-5 w-5 mr-2" />
-                   Error loading credit card details: {financialDetailsError.includes("NOTION_CREDIT_CARDS_DB_ID") ? "Credit Cards DB ID not configured." : financialDetailsError}
+                   Error loading credit card details: {creditCardDetailsError.includes("NOTION_CREDIT_CARDS_DB_ID") ? "Credit Cards DB ID not configured." : creditCardDetailsError}
                  </div>
               )}
-              {!isFinancialDetailsLoading && !financialDetailsError && apiCreditCards.length === 0 && (
+              {!isCreditCardDetailsLoading && !creditCardDetailsError && apiCreditCards.length === 0 && (
                  <p className="text-center text-muted-foreground">No credit cards found.</p>
               )}
-              {!isFinancialDetailsLoading && !financialDetailsError && apiCreditCards.length > 0 && (
+              {!isCreditCardDetailsLoading && !creditCardDetailsError && apiCreditCards.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiCreditCards.map((card) => (
                     <StatCard
