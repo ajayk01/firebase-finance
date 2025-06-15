@@ -97,13 +97,30 @@ export function ExpenseBreakdownTable({
       calculatedGrandTotal += expenseValue;
     });
 
-    const sortedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
+    // Convert map to array and sort sub-items within each category
+    let processedCategorizedData = Array.from(categoriesMap.entries()).map(([categoryName, groupData]) => ({
       categoryName,
-      items: groupData.items.sort((a, b) => a.subCategory.localeCompare(b.subCategory)),
+      // Sort sub-category items by expense amount (descending), then by subCategory name (ascending)
+      items: groupData.items.sort((a, b) => {
+        const expenseA = parseCurrency(a.expense);
+        const expenseB = parseCurrency(b.expense);
+        if (expenseB !== expenseA) {
+          return expenseB - expenseA; // Descending by expense amount
+        }
+        return a.subCategory.localeCompare(b.subCategory); // Ascending by subCategory name for tie-breaking
+      }),
       categoryTotal: groupData.total,
-    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+    }));
 
-    return { categorizedData: sortedCategorizedData, grandTotal: calculatedGrandTotal };
+    // Sort categories by their total amount (descending), then by category name (ascending) for tie-breaking
+    processedCategorizedData.sort((a, b) => {
+      if (b.categoryTotal !== a.categoryTotal) {
+        return b.categoryTotal - a.categoryTotal; // Descending by category total
+      }
+      return a.categoryName.localeCompare(b.categoryName); // Ascending by category name for tie-breaking
+    });
+
+    return { categorizedData: processedCategorizedData, grandTotal: calculatedGrandTotal };
   }, [data]);
 
   const showSelectors = selectedMonth && onMonthChange && months && selectedYear !== undefined && onYearChange && years;
