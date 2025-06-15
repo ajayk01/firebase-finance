@@ -31,7 +31,8 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
     formattedValue = `₹${(value / 1000).toFixed(1)}K`;
   }
   
-  if (percent < 0.03 || !isFinite(sx) || !isFinite(sy) || value === 0) return null;
+  // Removed percent < 0.03 condition to show all labels for non-zero values
+  if (value === 0 || !isFinite(sx) || !isFinite(sy)) return null;
 
 
   return (
