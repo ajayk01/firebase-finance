@@ -91,34 +91,32 @@ async function fetchMonthlyExpensesFromNotion(): Promise<ExpenseItem[]> {
       // Add sorts here if needed, e.g., by Year then Month
     });
 
-    return response.results.map((page) => {
-      const notionPage = page as NotionPage;
-      const year = notionPage.properties?.['Year']?.number;
-      const month = notionPage.properties?.['Month']?.select?.name; // Assuming 'Month' is a Select property
-      
-      // Try 'Title' type first for Category, then 'Rich Text'
-      let category = notionPage.properties?.['Category']?.title?.[0]?.plain_text;
-      if (!category && notionPage.properties?.['Category']?.rich_text?.[0]?.plain_text) {
-        category = notionPage.properties?.['Category']?.rich_text?.[0]?.plain_text;
-      }
-      
-      const subCategory = notionPage.properties?.['Sub-Category']?.rich_text?.[0]?.plain_text; // Assuming 'Sub-Category' is Rich Text
-      const amount = notionPage.properties?.['Amount']?.number;
-
-      if (typeof year !== 'number' || !month || !category || typeof amount !== 'number') {
-        console.warn(`Skipping expense item with missing data: ${notionPage.id}`, { year, month, category, amount });
-        // Return a value that can be filtered out or handled, or throw error
+      const items = await Promise.all(response.results.map(async (page) => {
+      const prop = (page as any).properties;
+      const expense = prop["This Month Expense"]["formula"]["number"];
+      if(expense == 0)
+      {
         return null; 
       }
-      
+      const subCategoryName = prop["Sub Category"]["title"][0]["plain_text"];
+      let categoryName = "";
+
+      // Await the category page fetch
+      if (prop["Category Name"]?.relation?.[0]?.id) {
+        const categoryPage = await notion.pages.retrieve({ page_id: prop["Category Name"].relation[0].id });
+        categoryName = (categoryPage as any)["properties"]["Category"]["title"][0]["plain_text"];
+      }
+
       return {
-        year: year,
-        month: month.toLowerCase(), // Ensure month is lowercase e.g. "jan"
-        category: category,
-        subCategory: subCategory || "", // Default to empty string if undefined
-        expense: `₹${amount.toFixed(2)}`, // Format as string with currency symbol
+        year: 2025,
+        month: 'jun', // Or get from your data
+        category: categoryName,
+        subCategory: subCategoryName || "",
+        expense: `₹${expense}`,
       };
-    }).filter(item => item !== null) as ExpenseItem[]; // Filter out any null items from parsing errors
+    }));
+
+    return items.filter(item => item !== null) as ExpenseItem[];
   } catch (error) {
     console.error("Error fetching monthly expenses from Notion:", error);
     throw new Error("Failed to fetch monthly expenses from Notion.");
