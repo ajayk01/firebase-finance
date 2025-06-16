@@ -53,15 +53,30 @@ const parseCurrency = (currencyStr: string): number => {
 };
 
 const getAvailableYears = (data: Array<{year: number, month: string, category: string, subCategory?: string, expense: string }>) => {
-  if (!data || data.length === 0) return [{ value: new Date().getFullYear(), label: new Date().getFullYear().toString() }];
-  const uniqueYears = Array.from(new Set(data.map(item => item.year)))
-    .sort((a, b) => b - a);
-  if (uniqueYears.length === 0) return [{ value: new Date().getFullYear(), label: new Date().getFullYear().toString() }];
+  const startYear = 2023;
+  const currentYear = new Date().getFullYear();
+
+  // Get all years from data and ensure at least 2023 to currentYear are included
+  const dataYears = data ? data.map(item => item.year) : [];
+  const minYear = Math.min(...dataYears, startYear);
+  const maxYear = Math.max(...dataYears, currentYear);
+
+  // Build a full range from minYear to maxYear
+  const uniqueYears = [];
+  for (let y = maxYear; y >= minYear; y--) {
+    uniqueYears.push(y);
+  }
+
   return uniqueYears.map(year => ({ value: year, label: year.toString() }));
 };
 
+
+
 export default function DashboardPage() {
   // API Data States
+  const now = new Date();
+  const currentMonth = monthOptions[now.getMonth()].value; // e.g., "jun"
+  const currentYear = now.getFullYear();
   const [apiBankAccounts, setApiBankAccounts] = useState<BankAccount[]>([]);
   const [apiCreditCards, setApiCreditCards] = useState<CreditCardAccount[]>([]);
   const [apiMonthlyExpenses, setApiMonthlyExpenses] = useState<ExpenseItem[]>([]);
@@ -78,8 +93,8 @@ export default function DashboardPage() {
 
   const [financialDetailsError, setFinancialDetailsError] = useState<string | null>(null);
   const availableExpenseYears = useMemo(() => getAvailableYears(apiMonthlyExpenses), [apiMonthlyExpenses]);
-  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>("jul");
-  const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(availableExpenseYears[0]?.value || new Date().getFullYear());
+  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>(currentMonth);
+  const [selectedExpenseYear, setSelectedExpenseYear] = useState<number>(currentYear);
   
   useEffect(() => 
   {
