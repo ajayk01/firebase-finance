@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -15,7 +16,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
   const sy = cy + outerRadius * sin;
   const mx = cx + (outerRadius + 15) * cos;
   const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 20;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 30;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
   const labelColor = fill;
@@ -31,7 +32,6 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
     formattedValue = `₹${(value / 1000).toFixed(1)}K`;
   }
   
-  // Removed percent < 0.03 condition to show all labels for non-zero values
   if (value === 0 || !isFinite(sx) || !isFinite(sy)) return null;
 
 
@@ -42,7 +42,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, 
         <tspan x={ex + (cos >= 0 ? 1 : -1) * 8} dy="-0.5em" className="font-semibold text-sm">
           {formattedValue}
         </tspan>
-        <tspan x={ex + (cos >= 0 ? 1 : -1) * 8} dy="1.1em" className="text-xs text-muted-foreground">
+        <tspan x={ex + (cos >= 0 ? 1 : -1) * 8} dy="1.1em" className="text-[11px] text-muted-foreground">
           {name}
         </tspan>
       </text>
@@ -66,7 +66,30 @@ export function ExpensePieChart({
   chartTitle = "Selected Month expense", 
   chartDescription = "Breakdown By Category" 
 }: ExpensePieChartProps) {
-  const chartData = data;
+  
+  const chartData = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
+    // Sort by value descending to know large and small items
+    const sorted = [...data].sort((a, b) => b.value - a.value);
+    
+    // Interleave them to spread small slices out
+    const interleaved = [];
+    let left = 0;
+    let right = sorted.length - 1;
+    while (left <= right) {
+      if (left <= right) {
+        interleaved.push(sorted[left]);
+        left++;
+      }
+      if (left <= right) {
+        interleaved.push(sorted[right]);
+        right--;
+      }
+    }
+    return interleaved;
+  }, [data]);
+
   const totalAmount = chartData.reduce((sum, entry) => sum + entry.value, 0);
 
   return (
@@ -79,7 +102,7 @@ export function ExpensePieChart({
         {chartData.length > 0 ? (
           <>
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ top: 20, right: 50, bottom: 20, left: 50 }}>
+              <PieChart margin={{ top: 30, right: 60, bottom: 30, left: 60 }}>
                 <Pie
                   data={chartData}
                   cx="50%"
@@ -87,7 +110,7 @@ export function ExpensePieChart({
                   labelLine={false}
                   label={renderCustomizedLabel}
                   outerRadius={110}
-                  innerRadius={70}
+                  innerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"

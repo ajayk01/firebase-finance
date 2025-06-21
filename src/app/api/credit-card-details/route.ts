@@ -22,6 +22,13 @@ async function fetchCreditCardsFromNotion()
       const cardNameProperty = (page as any).properties?.['Name']["title"][0]["plain_text"]; 
       const usedAmountProperty = (page as any).properties?.['Total Used']["formula"]; 
       const totalLimitProperty = (page as any).properties?.['Total Limit']["formula"];
+      const isActive = (page as any).properties?.['Is Active']["number"]
+      if(isActive == 0)
+      {
+          return null; //Skip inactive cards
+      }
+      
+      console.log("isActive", isActive);
       const type = (page as any)['icon']['type']
       const logo = (page as any)['icon'][type]["url"];
       return {
@@ -31,7 +38,7 @@ async function fetchCreditCardsFromNotion()
         totalLimit: totalLimitProperty?.number || 0,
         logo: logo || "",
       };
-    });
+    }).filter(card => card !== null).sort((a, b) => b.usedAmount - a.usedAmount);
   } catch (error) {
     console.error("Error fetching credit cards from Notion:", error);
     throw new Error("Failed to fetch credit cards from Notion.");

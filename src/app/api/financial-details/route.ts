@@ -9,7 +9,8 @@ const EXP_SUB_CATEGORY_DB_ID = process.env.EXP_SUB_CATEGORY_DB_ID;
 const INC_SUB_CATEGORY_DB_ID = process.env.INC_SUB_CATEGORY_DB_ID;
 const INVESTMENT_DB_ID = process.env.INVESTMENT_DB_ID;
 const EXPENSES_DB_ID = process.env.EXPENSE_DB_ID;
-interface ExpenseItem {
+interface ExpenseItem 
+{
   year: number;
   month: string;
   category: string;
@@ -338,3 +339,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+export { getFromToDates, formatDateToDDMMYYYY };
+export type { ExpenseItem };
