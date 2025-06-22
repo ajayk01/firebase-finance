@@ -9,8 +9,19 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 // const INC_SUB_CATEGORY_DB_ID = process.env.INC_SUB_CATEGORY_DB_ID;
 // const INVESTMENT_DB_ID = process.env.INVESTMENT_DB_ID;
 const EXPENSES_DB_ID = process.env.EXPENSE_DB_ID;
-interface ExpenseItem 
-{
+
+// Interfaces for data structures
+interface Transaction {
+    id: string;
+    date: string | null;
+    description: string;
+    amount: number;
+    type: 'Income' | 'Expense' | 'Transfer' | 'Other';
+    category?: string;
+    subCategory?: string;
+}
+
+interface ExpenseItem {
   year: number;
   month: string;
   category: string;
@@ -42,13 +53,13 @@ function formatDateToDDMMYYYY(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
-async function fetchGroupedMonthlyExpensesFromNotion({
+async function fetchMonthlyExpensesFromNotion({
   month,
   year
 }: {
   month?: string;
   year?: string;
-}): Promise<ExpenseItem[]> {
+}): Promise<Transaction[]> {
   if (!EXPENSES_DB_ID) {
     throw new Error("EXPENSES_DB_ID is not set in environment variables.");
   }
@@ -87,53 +98,58 @@ async function fetchGroupedMonthlyExpensesFromNotion({
         const prop = (page as any).properties;
 
         const amount = Number(prop["Amount"]["number"])
-
-        let subCategoryName = ""
-        let subCategoryId = prop["Sub Category"]["relation"]
-        if(subCategoryId && subCategoryId.length > 0)
-        {
-            const subCategoryPage = await notion.pages.retrieve({
-            page_id: subCategoryId[0]["id"]
+        if (amount === 0) return null;
+        console.log(prop['Expense']['title'][0]?.['plain_text']);
+        const description =prop['Expense']['title'][0]?.['plain_text'] || 'No Description';
+        const date = prop['Date']?.['date']?.['start'] || null;
+        
+        let subCategoryName = "";
+        let subCategoryId = prop["Sub Category"]["relation"];
+        if(subCategoryId && subCategoryId.length > 0) {
+          const subCategoryPage = await notion.pages.retrieve({ page_id: subCategoryId[0]["id"]
           });
-          subCategoryName = (subCategoryPage as any).properties["Sub Category"]["title"][0]["plain_text"]
+          subCategoryName = (subCategoryPage as any).properties["Sub Category"]["title"][0]["plain_text"];
         }
         
         let categoryName = "";
-        let categoryId = prop["Category"]["relation"]
-        if(categoryId)
+        let categoryId = prop["Category"]["relation"];
         if (categoryId && categoryId.length > 0) {
-          const categoryPage = await notion.pages.retrieve({
-            page_id: categoryId[0]["id"]
-          });
-
+          const categoryPage = await notion.pages.retrieve({ page_id: categoryId[0]["id"] });
           categoryName = (categoryPage as any).properties["Category"]["title"][0]["plain_text"];
         }
-        if(categoryName === "" && subCategoryName === "")
-        {
+
+        if (categoryName === "" && subCategoryName === "") {
           return null;
         }
+
         return {
+          id: page.id,
+          date: date,
+          description: description,
+          amount: amount,
+          type: 'Expense',
           category: categoryName,
           subCategory: subCategoryName,
-          expense: amount
-        };
+        } as Transaction;
       })
     );
 
-    // Filter out nulls
-    const validItems = items.filter(Boolean) as {
-      category: string;
-      subCategory: string;
-      expense: number;
-    }[];
+    return items.filter(Boolean) as Transaction[];
+  } catch (error) {
+    console.error("Error fetching expenses from Notion:", error);
+    throw new Error("Failed to fetch expenses from Notion.");
+  }
+}
 
-    // Group and sum
+function groupTransactions(transactions: Transaction[], month: string, year: number): ExpenseItem[] {
     const groupedMap: Record<string, Record<string, number>> = {};
 
-    validItems.forEach(({ category, subCategory, expense }) => {
-      if (!groupedMap[category]) groupedMap[category] = {};
-      if (!groupedMap[category][subCategory]) groupedMap[category][subCategory] = 0;
-      groupedMap[category][subCategory] += expense;
+    transactions.forEach(({ category, subCategory, amount }) => {
+      const cat = category || 'Uncategorized';
+      const sub = subCategory || 'Uncategorized';
+      if (!groupedMap[cat]) groupedMap[cat] = {};
+      if (!groupedMap[cat][sub]) groupedMap[cat][sub] = 0;
+      groupedMap[cat][sub] += amount;
     });
 
     // Convert to ExpenseItem[]
@@ -149,10 +165,6 @@ async function fetchGroupedMonthlyExpensesFromNotion({
     );
 
     return groupedArray;
-  } catch (error) {
-    console.error("Error fetching and grouping expenses from Notion:", error);
-    throw new Error("Failed to fetch grouped monthly expenses from Notion.");
-  }
 }
 
 export async function GET(request: NextRequest) {
@@ -163,29 +175,16 @@ export async function GET(request: NextRequest) {
     if (!process.env.NOTION_API_KEY) {
       return NextResponse.json({ error: "Notion API key is not configured." }, { status: 500 });
     }
-    // Check for all required DB IDs
-    // const requiredDbIds = [
-    //   { name: "EXP_SUB_CATEGORY_DB_ID", value: EXP_SUB_CATEGORY_DB_ID },
-    //   { name: "INC_SUB_CATEGORY_DB_ID", value: INC_SUB_CATEGORY_DB_ID },
-    //   { name: "INVESTMENT_DB_ID", value: INVESTMENT_DB_ID },
-    // ];
-
-    // for (const dbId of requiredDbIds) {
-    //   if (!dbId.value && dbId.name !== "EXP_SUB_CATEGORY_DB_ID") { // EXP_SUB_CATEGORY_DB_ID is an old name, check for new ones
-    //      // Allow specific DBs to be optional if desired by commenting out or conditional logic here
-    //     // For now, all are required
-    //     return NextResponse.json({ error: `${dbId.name} is not configured in environment variables.` }, { status: 500 });
-    //   }
-    // }
+    if (!month || !year) {
+        return NextResponse.json({ error: "Month and year are required query parameters." }, { status: 400 });
+    }
     
-    const [
-      monthlyExpenses
-    ] = await Promise.all([
-      fetchGroupedMonthlyExpensesFromNotion({ month: month ?? undefined, year: year ?? undefined })
-    ]);
+    const rawTransactions = await fetchMonthlyExpensesFromNotion({ month, year });
+    const monthlyExpenses = groupTransactions(rawTransactions, month, Number(year));
 
     return NextResponse.json({
       monthlyExpenses,
+      rawTransactions,
     });
   } catch (error) {
     console.error("Error in /api/monthly-expense:", error);

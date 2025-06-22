@@ -98,6 +98,7 @@ export default function DashboardPage() {
   
   // Expenses State
   const [apiMonthlyExpenses, setApiMonthlyExpenses] = useState<ExpenseItem[]>([]);
+  const [rawMonthlyExpenses, setRawMonthlyExpenses] = useState<Transaction[]>([]);
   const [isExpensesLoading, setIsExpensesLoading] = useState<boolean>(true);
   const [expensesError, setExpensesError] = useState<string | null>(null);
   const [selectedExpenseMonth, setSelectedExpenseMonth] = useState<string>(currentMonthValue);
@@ -173,7 +174,8 @@ export default function DashboardPage() {
     async function fetchExpenses() {
       const cacheKey = `expenses-${selectedExpenseYear}-${selectedExpenseMonth}`;
       if (dataCache.current[cacheKey]) {
-        setApiMonthlyExpenses(dataCache.current[cacheKey]);
+        setApiMonthlyExpenses(dataCache.current[cacheKey].monthlyExpenses);
+        setRawMonthlyExpenses(dataCache.current[cacheKey].rawTransactions);
         return;
       }
       setIsExpensesLoading(true); setExpensesError(null);
@@ -182,8 +184,10 @@ export default function DashboardPage() {
         if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch');
         const data = await res.json();
         const expenses = data.monthlyExpenses || [];
+        const rawTransactions = data.rawTransactions || [];
         setApiMonthlyExpenses(expenses);
-        dataCache.current[cacheKey] = expenses;
+        setRawMonthlyExpenses(rawTransactions);
+        dataCache.current[cacheKey] = { monthlyExpenses: expenses, rawTransactions };
       } catch (error) {
         setExpensesError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
@@ -322,15 +326,23 @@ export default function DashboardPage() {
 
   const handleViewMonthlyTransactions = (
     title: string,
-    sourceData: ExpenseItem[],
+    sourceData: any[],
     type: 'Income' | 'Expense' | 'Transfer'
   ) => {
     setTransactionDialogTitle(title);
     setIsTransactionDialogOpen(true);
-    setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
 
+    // For 'Expense', the sourceData is now the raw transactions array.
+    if (type === 'Expense') {
+      setIsTransactionsLoading(false);
+      setTransactions(sourceData as Transaction[]);
+      return;
+    }
+
+    // For Income and Investments, we still use mock data generation.
+    setIsTransactionsLoading(true);
     setTimeout(() => {
       if (sourceData.length === 0) {
         setTransactions([]);
@@ -338,18 +350,16 @@ export default function DashboardPage() {
         return;
       }
 
-      const mockTransactions: Transaction[] = sourceData
-        .flatMap(item => {
-            return {
-                id: `${type}-${item.category}-${item.subCategory}`,
-                date: new Date().toISOString(), // Using a generic date for mock
-                description: "Bank Charges By Bank......",
-                amount: parseCurrency(item.expense),
-                type: type,
-                category: item.category,
-                subCategory: item.subCategory,
-            };
-        })
+      const mockTransactions: Transaction[] = (sourceData as ExpenseItem[])
+        .flatMap(item => ({
+            id: `${type}-${item.category}-${item.subCategory}`,
+            date: new Date().toISOString(),
+            description: "Bank Charges By Bank......", // Mock description
+            amount: parseCurrency(item.expense),
+            type: type,
+            category: item.category,
+            subCategory: item.subCategory,
+        }))
         .sort((a, b) => b.amount - a.amount);
 
       setTransactions(mockTransactions);
@@ -485,7 +495,7 @@ export default function DashboardPage() {
                   data={apiMonthlyExpenses}
                   onViewTransactions={() => handleViewMonthlyTransactions(
                     `${monthOptions.find(m => m.value === selectedExpenseMonth)?.label} ${selectedExpenseYear} Expenses`,
-                    apiMonthlyExpenses,
+                    rawMonthlyExpenses,
                     'Expense'
                   )}
                 />
