@@ -7,7 +7,7 @@ import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
 import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
 import { AlertCircle } from "lucide-react";
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 const monthOptions = [
   { value: "jan", label: "January" },
@@ -59,24 +59,6 @@ const parseCurrency = (currencyStr: string): number => {
   return parseFloat(currencyStr.replace('₹', '').replace(/,/g, ''));
 };
 
-const getAvailableYearsOld = (data: Array<{year: number, month: string, category: string, subCategory?: string, expense: string }>) => {
-  const startYear = 2023;
-  const currentYear = new Date().getFullYear();
-
-  // Get all years from data and ensure at least 2023 to currentYear are included
-  const dataYears = data ? data.map(item => item.year) : [];
-  const minYear = Math.min(...dataYears, startYear);
-  const maxYear = Math.max(...dataYears, currentYear);
-
-  // Build a full range from minYear to maxYear
-  const uniqueYears = [];
-  for (let y = maxYear; y >= minYear; y--) {
-    uniqueYears.push(y);
-  }
-
-  return uniqueYears.map(year => ({ value: year, label: year.toString() }));
-};
-
 const getAvailableYears = () => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -87,6 +69,7 @@ const getAvailableYears = () => {
 };
 
 export default function DashboardPage() {
+  const dataCache = useRef<Record<string, any>>({});
   const now = new Date();
   const currentMonthValue = monthOptions[now.getMonth()].value;
   const currentYear = now.getFullYear();
@@ -170,12 +153,19 @@ export default function DashboardPage() {
   
   useEffect(() => {
     async function fetchExpenses() {
+      const cacheKey = `expenses-${selectedExpenseYear}-${selectedExpenseMonth}`;
+      if (dataCache.current[cacheKey]) {
+        setApiMonthlyExpenses(dataCache.current[cacheKey]);
+        return;
+      }
       setIsExpensesLoading(true); setExpensesError(null);
       try {
         const res = await fetch(`/api/monthly-expenses?month=${selectedExpenseMonth}&year=${selectedExpenseYear}`);
         if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch');
         const data = await res.json();
-        setApiMonthlyExpenses(data.monthlyExpenses || []);
+        const expenses = data.monthlyExpenses || [];
+        setApiMonthlyExpenses(expenses);
+        dataCache.current[cacheKey] = expenses;
       } catch (error) {
         setExpensesError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
@@ -187,12 +177,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchIncome() {
+      const cacheKey = `income-${selectedIncomeYear}-${selectedIncomeMonth}`;
+      if (dataCache.current[cacheKey]) {
+        setApiMonthlyIncome(dataCache.current[cacheKey]);
+        return;
+      }
       setIsIncomeLoading(true); setIncomeError(null);
       try {
         const res = await fetch(`/api/monthly-income?month=${selectedIncomeMonth}&year=${selectedIncomeYear}`);
         if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch');
         const data = await res.json();
-        setApiMonthlyIncome(data.monthlyIncome || []);
+        const income = data.monthlyIncome || [];
+        setApiMonthlyIncome(income);
+        dataCache.current[cacheKey] = income;
       } catch (error) {
         setIncomeError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
@@ -204,12 +201,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchInvestments() {
+      const cacheKey = `investments-${selectedInvestmentYear}-${selectedInvestmentMonth}`;
+      if (dataCache.current[cacheKey]) {
+        setApiMonthlyInvestments(dataCache.current[cacheKey]);
+        return;
+      }
       setIsInvestmentsLoading(true); setInvestmentsError(null);
       try {
         const res = await fetch(`/api/monthly-investments?month=${selectedInvestmentMonth}&year=${selectedInvestmentYear}`);
         if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch');
         const data = await res.json();
-        setApiMonthlyInvestments(data.monthlyInvestments || []);
+        const investments = data.monthlyInvestments || [];
+        setApiMonthlyInvestments(investments);
+        dataCache.current[cacheKey] = investments;
       } catch (error) {
         setInvestmentsError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
@@ -221,13 +225,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchSummaryData() {
+      const cacheKey = `summary-${selectedSummaryYear}`;
+      if (dataCache.current[cacheKey]) {
+        setApiSummaryData(dataCache.current[cacheKey].summaryData);
+        setTotalBankBalance(dataCache.current[cacheKey].totalBankBalance);
+        return;
+      }
       setIsSummaryLoading(true); setSummaryError(null);
       try {
         const res = await fetch(`/api/yearly-summary?year=${selectedSummaryYear}`);
         if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch');
         const data = await res.json();
-        setApiSummaryData(data.summaryData || []);
-        setTotalBankBalance(data.totalBankBalance || 0);
+        const summary = {
+          summaryData: data.summaryData || [],
+          totalBankBalance: data.totalBankBalance || 0
+        };
+        setApiSummaryData(summary.summaryData);
+        setTotalBankBalance(summary.totalBankBalance);
+        dataCache.current[cacheKey] = summary;
       } catch (error) {
         setSummaryError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
