@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface ExpenseItem {
   year: number;
@@ -48,6 +49,7 @@ interface ExpenseBreakdownTableProps {
   grandTotalTextColorClassName?: string;
   showSubCategoryColumn?: boolean;
   showCategoryTotalRow?: boolean;
+  onViewTransactions?: () => void;
 }
 
 interface CategorizedExpenseGroup {
@@ -76,6 +78,7 @@ export function ExpenseBreakdownTable({
   grandTotalTextColorClassName = "text-red-700",
   showSubCategoryColumn = true,
   showCategoryTotalRow = true,
+  onViewTransactions,
 }: ExpenseBreakdownTableProps) {
 
   const { categorizedData, grandTotal } = React.useMemo(() => {
@@ -129,37 +132,42 @@ export function ExpenseBreakdownTable({
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="flex flex-col items-start gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
         <CardTitle className="text-xl font-semibold whitespace-nowrap">{title}</CardTitle>
-        {showSelectors && (
-          <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-x-2 sm:space-y-0 sm:w-auto sm:min-w-[180px] flex-shrink-0">
-            <Select value={selectedMonth} onValueChange={onMonthChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select month" />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={selectedYear.toString()}
-              onValueChange={(value) => onYearChange(parseInt(value, 10))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year.value} value={year.value.toString()}>
-                    {year.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-x-2 sm:space-y-0 sm:w-auto flex-shrink-0">
+            {onViewTransactions && (
+                <Button variant="outline" size="sm" onClick={onViewTransactions}>View Transactions</Button>
+            )}
+            {showSelectors && (
+              <>
+                <Select value={selectedMonth} onValueChange={onMonthChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={(value) => onYearChange(parseInt(value, 10))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year.value} value={year.value.toString()}>
+                        {year.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -215,7 +223,7 @@ export function ExpenseBreakdownTable({
                 <TableCell className={cn("text-right py-3 px-4", grandTotalTextColorClassName)}>
                   ₹{grandTotal.toFixed(2)}
                 </TableCell>
-              </TableRow>
+              </TableRow>u  edhzzzzz
             </TableFooter>
           )}
         </Table>

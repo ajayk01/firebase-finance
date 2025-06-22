@@ -76,13 +76,20 @@ export function StatCard(props: StatCardProps) {
     )}>
       {showCreditCardDetails ? (
         <>
-          <div className="flex items-center justify-start gap-3 mb-3">
-            {props.creditCardLogoIcon && <img
-                        src={props.creditCardLogoIcon}
-                        alt={creditCardName || "credit_card Logo"}
-                        className="h-8 w-8 object-contain"
-                      />}
-            {creditCardName && <h3 className="text-lg font-semibold text-foreground">{creditCardName}</h3>}
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+                {props.creditCardLogoIcon && <img
+                            src={props.creditCardLogoIcon}
+                            alt={creditCardName || "credit_card Logo"}
+                            className="h-8 w-8 object-contain"
+                          />}
+                {creditCardName && <h3 className="text-lg font-semibold text-foreground">{creditCardName}</h3>}
+            </div>
+             {onViewTransactions && (
+              <Button variant="outline" size="sm" onClick={onViewTransactions}>
+                View Trans
+              </Button>
+            )}
           </div>
           <div className="flex-grow">
             {usedAmountText && (

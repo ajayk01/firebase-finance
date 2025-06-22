@@ -124,7 +124,7 @@ export default function DashboardPage() {
 
   // State for transaction dialog
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState<boolean>(false);
-  const [selectedBankAccount, setSelectedBankAccount] = useState<{ id: string; name: string } | null>(null);
+  const [transactionDialogTitle, setTransactionDialogTitle] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState<boolean>(false);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
@@ -269,14 +269,13 @@ export default function DashboardPage() {
 
 
   // --- Event Handlers ---
-  const handleViewTransactions = async (account: BankAccount) => {
-    setSelectedBankAccount({ id: account.id, name: account.name });
+  const handleViewBankTransactions = async (account: BankAccount) => {
+    setTransactionDialogTitle(account.name);
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
 
-    // Simulate API call with a short delay to show loading state
     setTimeout(() => {
       const baseTransactions: Omit<Transaction, 'id' | 'description'>[] = [
         { date: '2024-07-29', amount: 15.99, type: 'Expense' },
@@ -284,31 +283,74 @@ export default function DashboardPage() {
         { date: '2024-07-28', amount: 78.50, type: 'Expense' },
         { date: '2024-07-27', amount: 500, type: 'Transfer' },
         { date: '2024-07-26', amount: 5.75, type: 'Expense' },
-        { date: '2024-07-25', amount: 45.20, type: 'Expense' },
-        { date: '2024-07-24', amount: 120.00, type: 'Expense' },
-        { date: '2024-07-22', amount: 800, type: 'Income' },
-        { date: '2024-07-20', amount: 32.99, type: 'Expense' },
-        { date: '2024-07-18', amount: 40.00, type: 'Expense' },
       ];
-
-      const descriptions = [
-        'Netflix Subscription', 'Salary Deposit', 'Grocery Shopping', 'Transfer to Savings', 
-        'Coffee Run', 'Gasoline Fill-up', 'Dinner with Friends', 'Freelance Payment',
-        'Online Purchase', 'Gym Membership', 'Utility Bill', 'Client Payment'
-      ];
-      
+      const descriptions = ['Netflix', 'Salary', 'Groceries', 'Savings Transfer', 'Coffee'];
       const mockTransactions: Transaction[] = baseTransactions.map((tx, index) => ({
         ...tx,
         id: `${account.id}-${index}`,
-        // Use account name and a mix of descriptions to make data look unique per account
         description: `${descriptions[index % descriptions.length]}`,
-        // Slightly alter amounts to make them unique
         amount: parseFloat((tx.amount * (1 + (account.name.length % 5) / 10)).toFixed(2))
       }));
+      setTransactions(mockTransactions);
+      setIsTransactionsLoading(false);
+    }, 1000);
+  };
+  
+  const handleViewCreditCardTransactions = (card: CreditCardAccount) => {
+    setTransactionDialogTitle(card.name);
+    setIsTransactionDialogOpen(true);
+    setIsTransactionsLoading(true);
+    setTransactionsError(null);
+    setTransactions([]);
+
+    setTimeout(() => {
+        const descriptions = ['Swiggy', 'Amazon', 'Myntra', 'Zomato', 'Uber Ride'];
+        const mockTransactions: Transaction[] = Array.from({ length: 5 }, (_, index) => ({
+            id: `cc-${card.id}-${index}`,
+            date: new Date(Date.now() - index * 2 * 24 * 60 * 60 * 1000).toISOString(),
+            description: `${descriptions[index % descriptions.length]} on ${card.name}`,
+            amount: parseFloat((Math.random() * (2000 - 100) + 100).toFixed(2)),
+            type: 'Expense',
+        }));
+        setTransactions(mockTransactions);
+        setIsTransactionsLoading(false);
+    }, 1000);
+  };
+
+  const handleViewMonthlyTransactions = (
+    title: string,
+    sourceData: ExpenseItem[],
+    type: 'Income' | 'Expense' | 'Transfer'
+  ) => {
+    setTransactionDialogTitle(title);
+    setIsTransactionDialogOpen(true);
+    setIsTransactionsLoading(true);
+    setTransactionsError(null);
+    setTransactions([]);
+
+    setTimeout(() => {
+      if (sourceData.length === 0) {
+        setTransactions([]);
+        setIsTransactionsLoading(false);
+        return;
+      }
+
+      const mockTransactions: Transaction[] = sourceData
+        .flatMap(item => {
+            // Create a more detailed transaction per subcategory item
+            return {
+                id: `${type}-${item.category}-${item.subCategory}`,
+                date: new Date().toISOString(), // Using a generic date for mock
+                description: item.subCategory ? `${item.category} - ${item.subCategory}`: item.category,
+                amount: parseCurrency(item.expense),
+                type: type,
+            };
+        })
+        .sort((a, b) => b.amount - a.amount);
 
       setTransactions(mockTransactions);
       setIsTransactionsLoading(false);
-    }, 1000); // 1-second delay to simulate network latency
+    }, 1000);
   };
 
   // --- Memoized Data Transformations ---
@@ -398,7 +440,7 @@ export default function DashboardPage() {
               {!isBankDetailsLoading && !bankDetailsError && apiBankAccounts.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiBankAccounts.slice().sort((a, b) => b.balance - a.balance).map((account) => (
-                    <StatCard key={account.id} logo={account.logo} bankName={account.name} currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`} onViewTransactions={() => handleViewTransactions(account)} />
+                    <StatCard key={account.id} logo={account.logo} bankName={account.name} currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`} onViewTransactions={() => handleViewBankTransactions(account)} />
                   ))}
                 </div>
               )}
@@ -413,7 +455,7 @@ export default function DashboardPage() {
               {!isCreditCardDetailsLoading && !creditCardDetailsError && apiCreditCards.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiCreditCards.map((card) => (
-                    <StatCard key={card.id} creditCardLogoIcon={card.logo} creditCardName={card.name} usedAmountText={`Used : ${card.usedAmount.toLocaleString('en-IN')}`} totalLimitText={`Total Limit : ${card.totalLimit.toLocaleString('en-IN')}`} />
+                    <StatCard key={card.id} creditCardLogoIcon={card.logo} creditCardName={card.name} usedAmountText={`Used : ${card.usedAmount.toLocaleString('en-IN')}`} totalLimitText={`Total Limit : ${card.totalLimit.toLocaleString('en-IN')}`} onViewTransactions={() => handleViewCreditCardTransactions(card)} />
                   ))}
                 </div>
               )}
@@ -428,7 +470,21 @@ export default function DashboardPage() {
           {!isExpensesLoading && !expensesError && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <ExpenseBreakdownTable title="Expense Breakdown" selectedMonth={selectedExpenseMonth} onMonthChange={setSelectedExpenseMonth} months={monthOptions} selectedYear={selectedExpenseYear} onYearChange={setSelectedExpenseYear} years={availableYears} data={apiMonthlyExpenses} />
+                <ExpenseBreakdownTable 
+                  title="Expense Breakdown" 
+                  selectedMonth={selectedExpenseMonth} 
+                  onMonthChange={setSelectedExpenseMonth} 
+                  months={monthOptions} 
+                  selectedYear={selectedExpenseYear} 
+                  onYearChange={setSelectedExpenseYear} 
+                  years={availableYears} 
+                  data={apiMonthlyExpenses}
+                  onViewTransactions={() => handleViewMonthlyTransactions(
+                    `${monthOptions.find(m => m.value === selectedExpenseMonth)?.label} ${selectedExpenseYear} Expenses`,
+                    apiMonthlyExpenses,
+                    'Expense'
+                  )}
+                />
               </div>
               <div>
                 <ExpensePieChart data={currentMonthExpensePieData} chartTitle="Selected Month Expense" chartDescription="Breakdown By Category" />
@@ -444,7 +500,25 @@ export default function DashboardPage() {
           {!isIncomeLoading && !incomeError && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <ExpenseBreakdownTable title="Income Breakdown" selectedMonth={selectedIncomeMonth} onMonthChange={setSelectedIncomeMonth} months={monthOptions} selectedYear={selectedIncomeYear} onYearChange={setSelectedIncomeYear} years={availableYears} data={apiMonthlyIncome} amountColumnHeaderText="Income" amountColumnItemTextColorClassName="text-green-600 font-medium" categoryTotalTextColorClassName="text-green-700 font-semibold" grandTotalTextColorClassName="text-green-700" />
+                <ExpenseBreakdownTable 
+                  title="Income Breakdown" 
+                  selectedMonth={selectedIncomeMonth} 
+                  onMonthChange={setSelectedIncomeMonth} 
+                  months={monthOptions} 
+                  selectedYear={selectedIncomeYear} 
+                  onYearChange={setSelectedIncomeYear} 
+                  years={availableYears} 
+                  data={apiMonthlyIncome} 
+                  amountColumnHeaderText="Income" 
+                  amountColumnItemTextColorClassName="text-green-600 font-medium" 
+                  categoryTotalTextColorClassName="text-green-700 font-semibold" 
+                  grandTotalTextColorClassName="text-green-700"
+                  onViewTransactions={() => handleViewMonthlyTransactions(
+                    `${monthOptions.find(m => m.value === selectedIncomeMonth)?.label} ${selectedIncomeYear} Income`,
+                    apiMonthlyIncome,
+                    'Income'
+                  )}
+                />
               </div>
               <div>
                 <ExpensePieChart data={currentMonthIncomePieData} chartTitle="Selected Month Income" chartDescription="Breakdown By Category" />
@@ -460,7 +534,27 @@ export default function DashboardPage() {
            {!isInvestmentsLoading && !investmentsError && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <ExpenseBreakdownTable title="Investment Breakdown" selectedMonth={selectedInvestmentMonth} onMonthChange={setSelectedInvestmentMonth} months={monthOptions} selectedYear={selectedInvestmentYear} onYearChange={setSelectedInvestmentYear} years={availableYears} data={apiMonthlyInvestments} amountColumnHeaderText="Investment" amountColumnItemTextColorClassName="text-primary font-medium" categoryTotalTextColorClassName="text-primary font-semibold" grandTotalTextColorClassName="text-primary" showSubCategoryColumn={false} showCategoryTotalRow={false} />
+                <ExpenseBreakdownTable 
+                  title="Investment Breakdown" 
+                  selectedMonth={selectedInvestmentMonth} 
+                  onMonthChange={setSelectedInvestmentMonth} 
+                  months={monthOptions} 
+                  selectedYear={selectedInvestmentYear} 
+                  onYearChange={setSelectedInvestmentYear} 
+                  years={availableYears} 
+                  data={apiMonthlyInvestments} 
+                  amountColumnHeaderText="Investment" 
+                  amountColumnItemTextColorClassName="text-primary font-medium" 
+                  categoryTotalTextColorClassName="text-primary font-semibold" 
+                  grandTotalTextColorClassName="text-primary" 
+                  showSubCategoryColumn={false} 
+                  showCategoryTotalRow={false} 
+                  onViewTransactions={() => handleViewMonthlyTransactions(
+                    `${monthOptions.find(m => m.value === selectedInvestmentMonth)?.label} ${selectedInvestmentYear} Investments`,
+                    apiMonthlyInvestments,
+                    'Transfer'
+                  )}
+                />
               </div>
               <div>
                 <ExpensePieChart data={currentMonthInvestmentPieData} chartTitle="Selected Month Investments" chartDescription="Breakdown By Category" />
@@ -492,7 +586,7 @@ export default function DashboardPage() {
         open={isTransactionDialogOpen}
         onOpenChange={setIsTransactionDialogOpen}
         transactions={transactions}
-        bankName={selectedBankAccount?.name || null}
+        title={transactionDialogTitle}
         isLoading={isTransactionsLoading}
         error={transactionsError}
       />

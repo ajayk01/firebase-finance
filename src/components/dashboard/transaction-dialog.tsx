@@ -33,7 +33,7 @@ interface TransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   transactions: Transaction[];
-  bankName: string | null;
+  title: string | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -64,7 +64,7 @@ export function TransactionDialog({
   open,
   onOpenChange,
   transactions,
-  bankName,
+  title,
   isLoading,
   error,
 }: TransactionDialogProps) {
@@ -72,7 +72,7 @@ export function TransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Transactions for {bankName || "Bank Account"}</DialogTitle>
+          <DialogTitle>Transactions for {title || "Account"}</DialogTitle>
           <DialogDescription>
             Showing the latest transactions for this account.
           </DialogDescription>
@@ -114,6 +114,7 @@ export function TransactionDialog({
                         className={cn("text-right font-semibold whitespace-nowrap", {
                           "text-green-600": tx.type === 'Income',
                           "text-red-600": tx.type === 'Expense',
+                          "text-blue-600": tx.type === 'Transfer',
                         })}
                       >
                         {tx.type === 'Income' ? '+' : tx.type === 'Expense' ? '-' : ''}
