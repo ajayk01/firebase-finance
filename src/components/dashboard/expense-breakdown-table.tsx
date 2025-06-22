@@ -132,9 +132,9 @@ export function ExpenseBreakdownTable({
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="flex flex-col items-start gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
         <CardTitle className="text-xl font-semibold whitespace-nowrap">{title}</CardTitle>
-        <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-x-2 sm:space-y-0 sm:w-auto flex-shrink-0">
+        <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-x-3 sm:space-y-0 sm:w-auto flex-shrink-0">
             {onViewTransactions && (
-                <Button variant="outline" size="sm" onClick={onViewTransactions}>View Transactions</Button>
+                <Button variant="outline" size="sm" onClick={onViewTransactions}>View Transactions </Button>
             )}
             {showSelectors && (
               <>
@@ -223,7 +223,7 @@ export function ExpenseBreakdownTable({
                 <TableCell className={cn("text-right py-3 px-4", grandTotalTextColorClassName)}>
                   ₹{grandTotal.toFixed(2)}
                 </TableCell>
-              </TableRow>u  edhzzzzz
+              </TableRow>
             </TableFooter>
           )}
         </Table>

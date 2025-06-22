@@ -1,3 +1,4 @@
+
 "use client"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -5,7 +6,7 @@ import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
 import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
-import { TransactionDialog } from "@/components/dashboard/transaction-dialog";
+import { TransactionDialog } from "@/components/dashboard/transaction-dialog"; // Import new component
 import { AlertCircle } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from 'react';
 
@@ -53,6 +54,8 @@ interface Transaction {
   description: string;
   amount: number;
   type: 'Income' | 'Expense' | 'Transfer' | 'Other';
+  category?: string;
+  subCategory?: string;
 }
 
 interface SummaryDataItem {
@@ -337,13 +340,14 @@ export default function DashboardPage() {
 
       const mockTransactions: Transaction[] = sourceData
         .flatMap(item => {
-            // Create a more detailed transaction per subcategory item
             return {
                 id: `${type}-${item.category}-${item.subCategory}`,
                 date: new Date().toISOString(), // Using a generic date for mock
-                description: item.subCategory ? `${item.category} - ${item.subCategory}`: item.category,
+                description: "Bank Charges By Bank......",
                 amount: parseCurrency(item.expense),
                 type: type,
+                category: item.category,
+                subCategory: item.subCategory,
             };
         })
         .sort((a, b) => b.amount - a.amount);

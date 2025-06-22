@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,8 @@ interface Transaction {
   description: string;
   amount: number;
   type: 'Income' | 'Expense' | 'Transfer' | 'Other';
+  category?: string;
+  subCategory?: string;
 }
 
 interface TransactionDialogProps {
@@ -68,9 +71,15 @@ export function TransactionDialog({
   isLoading,
   error,
 }: TransactionDialogProps) {
+
+  const isMonthlySummary = React.useMemo(() =>
+    transactions.length > 0 && transactions.some(tx => tx.category),
+    [transactions]
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[1200px] h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Transactions for {title || "Account"}</DialogTitle>
           <DialogDescription>
@@ -81,7 +90,7 @@ export function TransactionDialog({
           <ScrollArea className="h-full pr-6">
             {isLoading ? (
               <div className="space-y-2">
-                {[...Array(10)].map((_, i) => (
+               {[...Array(15)].map((_, i) => (
                   <div key={i} className="flex items-center space-x-4 p-2">
                     <Skeleton className="h-4 w-1/4" />
                     <Skeleton className="h-4 w-2/4" />
@@ -99,7 +108,15 @@ export function TransactionDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
+                    {isMonthlySummary ? (
+                      <>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Sub-category</TableHead>
+                        <TableHead>Description</TableHead>
+                      </>
+                    ) : (
+                      <TableHead>Description</TableHead>
+                    )}
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -109,7 +126,15 @@ export function TransactionDialog({
                       <TableCell className="text-muted-foreground whitespace-nowrap">
                         {formatDate(tx.date)}
                       </TableCell>
-                      <TableCell className="font-medium">{tx.description}</TableCell>
+                      {isMonthlySummary ? (
+                        <>
+                          <TableCell className="font-medium">{tx.category}</TableCell>
+                          <TableCell className="font-medium">{tx.subCategory || '-'}</TableCell>
+                          <TableCell className="font-medium">{tx.description}</TableCell>
+                        </>
+                      ) : (
+                        <TableCell className="font-medium">{tx.description}</TableCell>
+                      )}
                       <TableCell
                         className={cn("text-right font-semibold whitespace-nowrap", {
                           "text-green-600": tx.type === 'Income',
