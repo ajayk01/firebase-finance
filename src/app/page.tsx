@@ -1,4 +1,3 @@
-
 "use client"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -6,6 +5,7 @@ import { ExpenseBreakdownTable } from "@/components/dashboard/expense-breakdown-
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { MonthlySummaryChart } from "@/components/dashboard/monthly-summary-chart";
 import { MonthlyMoneyTable, type FinancialSnapshotItem } from "@/components/dashboard/monthly-money-table";
+import { TransactionDialog } from "@/components/dashboard/transaction-dialog";
 import { AlertCircle } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from 'react';
 
@@ -36,7 +36,7 @@ interface BankAccount {
   id: string;
   name: string;
   balance: number;
-  logo: string; // Optional logo URL
+  logo: string;
 }
 
 interface CreditCardAccount {
@@ -45,6 +45,14 @@ interface CreditCardAccount {
   usedAmount: number;
   totalLimit: number;
   logo: string;
+}
+
+interface Transaction {
+  id: string;
+  date: string | null;
+  description: string;
+  amount: number;
+  type: 'Income' | 'Expense' | 'Transfer' | 'Other';
 }
 
 interface SummaryDataItem {
@@ -113,6 +121,13 @@ export default function DashboardPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [selectedSummaryYear, setSelectedSummaryYear] = useState<number>(currentYear);
   const [selectedSummaryDetailMonth, setSelectedSummaryDetailMonth] = useState<string>(currentMonthValue);
+
+  // State for transaction dialog
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState<boolean>(false);
+  const [selectedBankAccount, setSelectedBankAccount] = useState<{ id: string; name: string } | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isTransactionsLoading, setIsTransactionsLoading] = useState<boolean>(false);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
   
   const availableYears = useMemo(() => getAvailableYears(), []);
 
@@ -253,6 +268,49 @@ export default function DashboardPage() {
   }, [selectedSummaryYear]);
 
 
+  // --- Event Handlers ---
+  const handleViewTransactions = async (account: BankAccount) => {
+    setSelectedBankAccount({ id: account.id, name: account.name });
+    setIsTransactionDialogOpen(true);
+    setIsTransactionsLoading(true);
+    setTransactionsError(null);
+    setTransactions([]);
+
+    // Simulate API call with a short delay to show loading state
+    setTimeout(() => {
+      const baseTransactions: Omit<Transaction, 'id' | 'description'>[] = [
+        { date: '2024-07-29', amount: 15.99, type: 'Expense' },
+        { date: '2024-07-28', amount: 2500, type: 'Income' },
+        { date: '2024-07-28', amount: 78.50, type: 'Expense' },
+        { date: '2024-07-27', amount: 500, type: 'Transfer' },
+        { date: '2024-07-26', amount: 5.75, type: 'Expense' },
+        { date: '2024-07-25', amount: 45.20, type: 'Expense' },
+        { date: '2024-07-24', amount: 120.00, type: 'Expense' },
+        { date: '2024-07-22', amount: 800, type: 'Income' },
+        { date: '2024-07-20', amount: 32.99, type: 'Expense' },
+        { date: '2024-07-18', amount: 40.00, type: 'Expense' },
+      ];
+
+      const descriptions = [
+        'Netflix Subscription', 'Salary Deposit', 'Grocery Shopping', 'Transfer to Savings', 
+        'Coffee Run', 'Gasoline Fill-up', 'Dinner with Friends', 'Freelance Payment',
+        'Online Purchase', 'Gym Membership', 'Utility Bill', 'Client Payment'
+      ];
+      
+      const mockTransactions: Transaction[] = baseTransactions.map((tx, index) => ({
+        ...tx,
+        id: `${account.id}-${index}`,
+        // Use account name and a mix of descriptions to make data look unique per account
+        description: `${descriptions[index % descriptions.length]}`,
+        // Slightly alter amounts to make them unique
+        amount: parseFloat((tx.amount * (1 + (account.name.length % 5) / 10)).toFixed(2))
+      }));
+
+      setTransactions(mockTransactions);
+      setIsTransactionsLoading(false);
+    }, 1000); // 1-second delay to simulate network latency
+  };
+
   // --- Memoized Data Transformations ---
   const currentMonthExpensePieData = useMemo(() => {
     const aggregated: { [key: string]: number } = {};
@@ -340,7 +398,7 @@ export default function DashboardPage() {
               {!isBankDetailsLoading && !bankDetailsError && apiBankAccounts.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {apiBankAccounts.slice().sort((a, b) => b.balance - a.balance).map((account) => (
-                    <StatCard key={account.id} logo={account.logo} bankName={account.name} currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`} />
+                    <StatCard key={account.id} logo={account.logo} bankName={account.name} currentBalanceText={`Current Balance : ${account.balance.toLocaleString('en-IN')}`} onViewTransactions={() => handleViewTransactions(account)} />
                   ))}
                 </div>
               )}
@@ -429,8 +487,15 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-
       </main>
+      <TransactionDialog
+        open={isTransactionDialogOpen}
+        onOpenChange={setIsTransactionDialogOpen}
+        transactions={transactions}
+        bankName={selectedBankAccount?.name || null}
+        isLoading={isTransactionsLoading}
+        error={transactionsError}
+      />
     </div>
   );
 }
