@@ -1,4 +1,4 @@
-# **App Name**: Exact Replica
+# **App Name**: Finance Management
 
 ## Core Features:
 

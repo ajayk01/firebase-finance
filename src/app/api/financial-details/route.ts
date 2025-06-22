@@ -112,7 +112,6 @@ async function fetchGroupedMonthlyExpensesFromNotion({
         {
           return null;
         }
-        // console.log("\nCategory Name : ", categoryName, "\nSub Category Name : ", subCategoryName, "\nAmount : ", amount);
         return {
           category: categoryName,
           subCategory: subCategoryName,
