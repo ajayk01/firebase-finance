@@ -5,11 +5,12 @@ import { Client } from '@notionhq/client';
 
 // Initialize Notion client
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-// const EXP_SUB_CATEGORY_DB_ID = process.env.EXP_SUB_CATEGORY_DB_ID;
-// const INC_SUB_CATEGORY_DB_ID = process.env.INC_SUB_CATEGORY_DB_ID;
+const EXP_SUB_CATEGORY_DB_ID = "1c570d7fb20b80beaee5c855f75c987f";
+const EXPENSE_CATEGORY_DB_ID = "1c570d7fb20b813dbd11e369874aa147";
 // const INVESTMENT_DB_ID = process.env.INVESTMENT_DB_ID;
 const EXPENSES_DB_ID = process.env.EXPENSE_DB_ID;
-
+const categoryCache: Map<string, string> = new Map();
+const subCategoryCache: Map<string, string> = new Map();
 // Interfaces for data structures
 interface Transaction {
     id: string;
@@ -53,6 +54,36 @@ function formatDateToDDMMYYYY(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+async function loadCategoryCache() 
+{
+  if (!EXPENSE_CATEGORY_DB_ID) return;
+  console.log("Loading expense category db id cache from Notion...");
+  const response = await notion.databases.query({
+    database_id: EXPENSE_CATEGORY_DB_ID,
+  });
+    response.results.forEach((page: any) => 
+    {
+    const id = page.id;
+    const name = page.properties["Category"]?.title?.[0]?.plain_text;
+    categoryCache.set(id, name);
+  });
+}
+
+async function loadSubCategoryCache() 
+{
+  if (!EXP_SUB_CATEGORY_DB_ID) return;
+  console.log("Loading expense sub category db id cache from Notion...");
+  const response = await notion.databases.query({
+    database_id: EXP_SUB_CATEGORY_DB_ID,
+  });
+    response.results.forEach((page: any) => 
+    {
+    const id = page.id;
+    const name = page.properties["Sub Category"]?.title?.[0]?.plain_text;
+    subCategoryCache.set(id, name);
+  });
+}
+
 async function fetchMonthlyExpensesFromNotion({
   month,
   year
@@ -85,7 +116,19 @@ async function fetchMonthlyExpensesFromNotion({
         });
       }
     }
+    console.log("Checking....")
+    if(categoryCache.size === 0) 
+      {
+        console.log("Category cache is empty, loading from Notion...");
+         loadCategoryCache();
+      }
 
+    if(subCategoryCache.size === 0)
+      {
+        console.log("Sub Category cache is empty, loading from Notion...");
+        loadSubCategoryCache();
+      }
+    
     const response = await notion.databases.query({
       database_id: EXPENSES_DB_ID,
       ...(filters.and && { filter: filters })
@@ -99,29 +142,32 @@ async function fetchMonthlyExpensesFromNotion({
 
         const amount = Number(prop["Amount"]["number"])
         if (amount === 0) return null;
-        console.log(prop['Expense']['title'][0]?.['plain_text']);
         const description =prop['Expense']['title'][0]?.['plain_text'] || 'No Description';
         const date = prop['Date']?.['date']?.['start'] || null;
         
-        let subCategoryName = "";
-        let subCategoryId = prop["Sub Category"]["relation"];
-        if(subCategoryId && subCategoryId.length > 0) {
-          const subCategoryPage = await notion.pages.retrieve({ page_id: subCategoryId[0]["id"]
-          });
-          subCategoryName = (subCategoryPage as any).properties["Sub Category"]["title"][0]["plain_text"];
+        let subCategoryId = prop["Sub Category"]["relation"][0]?.["id"]
+        let categoryId = prop["Category"]["relation"][0]?.["id"]
+        let categoryName = ""
+        if(categoryId != undefined) 
+        {
+          console.log("Category ID : ", categoryId);
+          // Check if category is already cached
+          categoryName = categoryCache.get(categoryId) ?? "";
+         
         }
-        
-        let categoryName = "";
-        let categoryId = prop["Category"]["relation"];
-        if (categoryId && categoryId.length > 0) {
-          const categoryPage = await notion.pages.retrieve({ page_id: categoryId[0]["id"] });
-          categoryName = (categoryPage as any).properties["Category"]["title"][0]["plain_text"];
+        let subCategoryName = ""
+        if(subCategoryId != undefined)
+        {
+          console.log("Sub Category ID : ", subCategoryId);
+          //console.log(subCategoryCache)
+          subCategoryName = subCategoryCache.get(subCategoryId) ?? "";
+         
         }
-
-        if (categoryName === "" && subCategoryName === "") {
+         console.log("Category Name : ", categoryName, "Sub Category Name : ", subCategoryName);
+         if(categoryName == "" && subCategoryName == "")
+         {
           return null;
-        }
-
+         }
         return {
           id: page.id,
           date: date,
@@ -181,7 +227,11 @@ export async function GET(request: NextRequest) {
     
     const rawTransactions = await fetchMonthlyExpensesFromNotion({ month, year });
     const monthlyExpenses = groupTransactions(rawTransactions, month, Number(year));
-
+    rawTransactions.sort((a, b) => {
+          if (!a.date) return -1;
+          if (!b.date) return 1;
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
     return NextResponse.json({
       monthlyExpenses,
       rawTransactions,

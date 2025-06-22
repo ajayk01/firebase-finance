@@ -6,6 +6,13 @@ import { Client } from '@notionhq/client';
 // Initialize Notion client
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const INCOME_DB_ID = process.env.INCOME_DB_ID;
+const INC_SUB_CATEGORY_DB_ID = process.env.INC_SUB_CATEGORY_DB_ID;
+const INC_CATEGORY_DB_ID = process.env.INC_CATEGORY_DB_ID;
+
+const categoryCache: Map<string, string> = new Map();
+const subCategoryCache: Map<string, string> = new Map();
+
+
 interface ExpenseItem 
 {
   year: number;
@@ -37,6 +44,36 @@ function formatDateToDDMMYYYY(date: Date): string {
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
     const year = date.getFullYear();
     return `${year}-${month}-${day}`;
+}
+
+async function loadCategoryCache() 
+{
+  if (!INC_CATEGORY_DB_ID) return;
+  console.log("Loading expense category db id cache from Notion...");
+  const response = await notion.databases.query({
+    database_id: INC_CATEGORY_DB_ID,
+  });
+    response.results.forEach((page: any) => 
+    {
+    const id = page.id;
+    const name = page.properties["Category"]?.title?.[0]?.plain_text;
+    categoryCache.set(id, name);
+  });
+}
+
+async function loadSubCategoryCache() 
+{
+  if (!INC_SUB_CATEGORY_DB_ID) return;
+  console.log("Loading expense sub category db id cache from Notion...");
+  const response = await notion.databases.query({
+    database_id: INC_SUB_CATEGORY_DB_ID,
+  });
+    response.results.forEach((page: any) => 
+    {
+    const id = page.id;
+    const name = page.properties["Sub Category"]?.title?.[0]?.plain_text;
+    subCategoryCache.set(id, name);
+  });
 }
 
 async function fetchGroupedMonthlyExpensesFromNotion({
@@ -72,6 +109,18 @@ async function fetchGroupedMonthlyExpensesFromNotion({
       }
     }
 
+    if(categoryCache.size === 0) 
+      {
+        console.log("Category cache is empty, loading from Notion...");
+         loadCategoryCache();
+      }
+
+    if(subCategoryCache.size === 0)
+      {
+        console.log("Sub Category cache is empty, loading from Notion...");
+        loadSubCategoryCache();
+      }
+
     const response = await notion.databases.query({
       database_id: INCOME_DB_ID,
       ...(filters.and && { filter: filters })
@@ -84,30 +133,29 @@ async function fetchGroupedMonthlyExpensesFromNotion({
         const prop = (page as any).properties;
 
         const amount = Number(prop["Amount"]["number"])
+        let subCategoryId = prop["Sub Category"]["relation"][0]?.["id"]
+        let categoryId = prop["Category"]["relation"][0]?.["id"]
+        let categoryName = ""
+        if(categoryId != undefined) 
+        {
+          console.log("Category ID : ", categoryId);
+          // Check if category is already cached
+          categoryName = categoryCache.get(categoryId) ?? "";
+         
+        }
         let subCategoryName = ""
-        let subCategoryId = prop["Sub Category"]["relation"]
-        if(subCategoryId && subCategoryId.length > 0)
+        if(subCategoryId != undefined)
         {
-            const subCategoryPage = await notion.pages.retrieve({
-            page_id: subCategoryId[0]["id"]
-          });
-          subCategoryName = (subCategoryPage as any).properties["Sub Category"]["title"][0]["plain_text"]
+          console.log("Sub Category ID : ", subCategoryId);
+          //console.log(subCategoryCache)
+          subCategoryName = subCategoryCache.get(subCategoryId) ?? "";
+         
         }
-        
-        let categoryName = "";
-        let categoryId = prop["Category"]["relation"]
-        if(categoryId)
-        if (categoryId && categoryId.length > 0) {
-          const categoryPage = await notion.pages.retrieve({
-            page_id: categoryId[0]["id"]
-          });
-
-          categoryName = (categoryPage as any).properties["Category"]["title"][0]["plain_text"];
-        }
-        if(categoryName === "" && subCategoryName === "")
-        {
+         console.log("Category Name : ", categoryName, "Sub Category Name : ", subCategoryName);
+         if(categoryName == "" && subCategoryName == "")
+         {
           return null;
-        }
+         }
         return {
           category: categoryName,
           subCategory: subCategoryName,
