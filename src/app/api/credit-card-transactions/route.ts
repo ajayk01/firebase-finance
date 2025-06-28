@@ -83,12 +83,19 @@ async function fetchFromDatabase(
             const amountProp = properties[propertyNames.amount]['number'];
             const dateProp = properties[propertyNames.date]['date']?.['start'] || null;
 
+
+            let transactionType = type;
+            // If it's an expense and the description is "CC bill", treat it as income.
+            if (type === 'Expense' && descriptionProp.toLowerCase() === 'cc bill') {
+                transactionType = 'Income';
+            }
+
             return {
                 id: page.id,
                 date: dateProp,
                 description: descriptionProp,
                 amount: amountProp,
-                type: type,
+                type: transactionType,
             };
         });
     } catch (error) {
@@ -130,7 +137,6 @@ export async function GET(request: NextRequest) {
                 date: 'Investment Date', amount: 'Invested Amount', description: 'Description', relation: 'Bank Account'
             })
         ]);
-        console.log("investmentTransactions ", investmentTransactions);
         const allTransactions = [...expenseTransactions, ...incomeTransactions, ...investmentTransactions];
         
         allTransactions.sort((a, b) => {
@@ -142,7 +148,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ transactions: allTransactions });
 
     } catch (error) {
-        console.error("Error in /api/bank-transactions:", error);
+        console.error("Error in /api/credit-card-transactions:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while fetching transactions.";
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
