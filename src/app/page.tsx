@@ -283,24 +283,19 @@ export default function DashboardPage() {
     setTransactionsError(null);
     setTransactions([]);
 
-    setTimeout(() => {
-      const baseTransactions: Omit<Transaction, 'id' | 'description'>[] = [
-        { date: '2024-07-29', amount: 15.99, type: 'Expense' },
-        { date: '2024-07-28', amount: 2500, type: 'Income' },
-        { date: '2024-07-28', amount: 78.50, type: 'Expense' },
-        { date: '2024-07-27', amount: 500, type: 'Transfer' },
-        { date: '2024-07-26', amount: 5.75, type: 'Expense' },
-      ];
-      const descriptions = ['Netflix', 'Salary', 'Groceries', 'Savings Transfer', 'Coffee'];
-      const mockTransactions: Transaction[] = baseTransactions.map((tx, index) => ({
-        ...tx,
-        id: `${account.id}-${index}`,
-        description: `${descriptions[index % descriptions.length]}`,
-        amount: parseFloat((tx.amount * (1 + (account.name.length % 5) / 10)).toFixed(2))
-      }));
-      setTransactions(mockTransactions);
+    try {
+      const res = await fetch(`/api/bank-transactions?bankAccountId=${account.id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch transactions');
+      }
+      const data = await res.json();
+      setTransactions(data.transactions || []);
+    } catch (error) {
+      setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred");
+    } finally {
       setIsTransactionsLoading(false);
-    }, 1000);
+    }
   };
   
   const handleViewCreditCardTransactions = (card: CreditCardAccount) => {
