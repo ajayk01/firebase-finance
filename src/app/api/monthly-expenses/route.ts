@@ -57,7 +57,6 @@ function formatDateToDDMMYYYY(date: Date): string {
 async function loadCategoryCache() 
 {
   if (!EXPENSE_CATEGORY_DB_ID) return;
-  console.log("Loading expense category db id cache from Notion...");
   const response = await notion.databases.query({
     database_id: EXPENSE_CATEGORY_DB_ID,
   });
@@ -72,7 +71,6 @@ async function loadCategoryCache()
 async function loadSubCategoryCache() 
 {
   if (!EXP_SUB_CATEGORY_DB_ID) return;
-  console.log("Loading expense sub category db id cache from Notion...");
   const response = await notion.databases.query({
     database_id: EXP_SUB_CATEGORY_DB_ID,
   });
@@ -99,7 +97,6 @@ async function fetchMonthlyExpensesFromNotion({
     const { startDate, endDate } = getFromToDates(String(month), Number(year));
     const from = formatDateToDDMMYYYY(startDate);
     const to = formatDateToDDMMYYYY(endDate);
-    console.log("From Date : ", from, "To Date : ", to);
     const filters: any = {};
     if (from || to) {
       filters["and"] = [];
@@ -116,11 +113,10 @@ async function fetchMonthlyExpensesFromNotion({
         });
       }
     }
-    console.log("Checking....")
     if(categoryCache.size === 0) 
       {
         console.log("Category cache is empty, loading from Notion...");
-         loadCategoryCache();
+        loadCategoryCache();
       }
 
     if(subCategoryCache.size === 0)
@@ -150,7 +146,6 @@ async function fetchMonthlyExpensesFromNotion({
         let categoryName = ""
         if(categoryId != undefined) 
         {
-          console.log("Category ID : ", categoryId);
           // Check if category is already cached
           categoryName = categoryCache.get(categoryId) ?? "";
          
@@ -158,16 +153,13 @@ async function fetchMonthlyExpensesFromNotion({
         let subCategoryName = ""
         if(subCategoryId != undefined)
         {
-          console.log("Sub Category ID : ", subCategoryId);
-          //console.log(subCategoryCache)
           subCategoryName = subCategoryCache.get(subCategoryId) ?? "";
          
         }
-         console.log("Category Name : ", categoryName, "Sub Category Name : ", subCategoryName);
-         if(categoryName == "" && subCategoryName == "")
-         {
+        if(categoryName == "" && subCategoryName == "")
+        {
           return null;
-         }
+        }
         return {
           id: page.id,
           date: date,

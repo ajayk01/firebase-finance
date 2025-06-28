@@ -49,7 +49,6 @@ function formatDateToDDMMYYYY(date: Date): string {
 async function loadCategoryCache() 
 {
   if (!INC_CATEGORY_DB_ID) return;
-  console.log("Loading expense category db id cache from Notion...");
   const response = await notion.databases.query({
     database_id: INC_CATEGORY_DB_ID,
   });
@@ -64,7 +63,6 @@ async function loadCategoryCache()
 async function loadSubCategoryCache() 
 {
   if (!INC_SUB_CATEGORY_DB_ID) return;
-  console.log("Loading expense sub category db id cache from Notion...");
   const response = await notion.databases.query({
     database_id: INC_SUB_CATEGORY_DB_ID,
   });
@@ -91,7 +89,6 @@ async function fetchGroupedMonthlyExpensesFromNotion({
     const { startDate, endDate } = getFromToDates(String(month), Number(year));
     const from = formatDateToDDMMYYYY(startDate);
     const to = formatDateToDDMMYYYY(endDate);
-    console.log("From Date : ", from, "To Date : ", to);
     const filters: any = {};
     if (from || to) {
       filters["and"] = [];
@@ -138,7 +135,6 @@ async function fetchGroupedMonthlyExpensesFromNotion({
         let categoryName = ""
         if(categoryId != undefined) 
         {
-          console.log("Category ID : ", categoryId);
           // Check if category is already cached
           categoryName = categoryCache.get(categoryId) ?? "";
          
@@ -146,16 +142,14 @@ async function fetchGroupedMonthlyExpensesFromNotion({
         let subCategoryName = ""
         if(subCategoryId != undefined)
         {
-          console.log("Sub Category ID : ", subCategoryId);
           //console.log(subCategoryCache)
           subCategoryName = subCategoryCache.get(subCategoryId) ?? "";
          
         }
-         console.log("Category Name : ", categoryName, "Sub Category Name : ", subCategoryName);
-         if(categoryName == "" && subCategoryName == "")
-         {
+        if(categoryName == "" && subCategoryName == "")
+        {
           return null;
-         }
+        }
         return {
           category: categoryName,
           subCategory: subCategoryName,

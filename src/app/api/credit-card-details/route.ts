@@ -28,7 +28,6 @@ async function fetchCreditCardsFromNotion()
           return null; //Skip inactive cards
       }
       
-      console.log("isActive", isActive);
       const type = (page as any)['icon']['type']
       const logo = (page as any)['icon'][type]["url"];
       return {

@@ -130,7 +130,6 @@ export async function GET(request: NextRequest) {
                 date: 'Investment Date', amount: 'Invested Amount', description: 'Description', relation: 'Bank Account'
             })
         ]);
-        console.log("investmentTransactions ", investmentTransactions);
         const allTransactions = [...expenseTransactions, ...incomeTransactions, ...investmentTransactions];
         
         allTransactions.sort((a, b) => {

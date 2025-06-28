@@ -54,7 +54,6 @@ async function fetchGroupedMonthlyExpensesFromNotion({
     const { startDate, endDate } = getFromToDates(String(month), Number(year));
     const from = formatDateToDDMMYYYY(startDate);
     const to = formatDateToDDMMYYYY(endDate);
-    console.log("From Date : ", from, "To Date : ", to);
     const filters: any = {};
     if (from || to) {
       filters["and"] = [];
