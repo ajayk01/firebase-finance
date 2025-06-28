@@ -79,10 +79,6 @@ async function fetchFromDatabase(
         return response.results.map((page: any): Transaction => {
             const properties = page.properties;
             // Title properties can have different names, e.g., 'Expense' or 'Name'
-            if(type == "Investment")
-            {
-                console.log(properties)
-            }
             const descriptionProp = properties[propertyNames.description]['title'][0]['plain_text'];
             const amountProp = properties[propertyNames.amount]['number'];
             const dateProp = properties[propertyNames.date]['date']?.['start'] || null;

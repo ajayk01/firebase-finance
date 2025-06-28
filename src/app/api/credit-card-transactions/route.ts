@@ -6,13 +6,15 @@ import { Client } from '@notionhq/client';
 // Initialize Notion client
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const EXPENSE_DB_ID = process.env.EXPENSE_DB_ID;
+const INCOME_DB_ID = process.env.INCOME_DB_ID;
+const INVESTMENT_DB_ID = process.env.INVESTMENT_TRANS_DB_ID;
 
 interface Transaction {
     id: string;
     date: string | null;
     description: string;
     amount: number;
-    type: 'Expense';
+    type: 'Income' | 'Expense' | 'Investment' | 'Other';
 }
 
 const monthMap: Record<string, number> = 
@@ -24,7 +26,7 @@ function getFromToDates(month: string, year: number) {
   const monthIndex = monthMap[month.toLowerCase()];
 
     if (monthIndex === undefined) {
-        throw new Error("Invalid month provided.");
+        throw new Error("Invalid month provided. Please use full month names (e.g., 'Jan', 'February').");
     }
 
     const startDate = new Date(year, monthIndex, 1);
@@ -37,10 +39,12 @@ async function fetchFromDatabase(
     databaseId: string | undefined, 
     creditCardId: string, 
     from: string, 
-    to: string
+    to: string, 
+    type: Transaction['type'], 
+    propertyNames: { date: string, amount: string, description: string, relation: string }
 ): Promise<Transaction[]> {
     if (!databaseId) {
-        console.error("EXPENSE_DB_ID is not set in environment variables.");
+        // Silently fail if DB ID is not provided
         return [];
     }
 
@@ -50,21 +54,19 @@ async function fetchFromDatabase(
             filter: {
                 and: [
                     {
-                        // IMPORTANT: Assumes your Notion 'Expenses' database has a relation property named "Credit Card"
-                        // that links to your "Credit Cards" database.
-                        property: "Credit Card",
+                        property: propertyNames.relation,
                         relation: {
                             contains: creditCardId,
                         },
                     },
                     {
-                        property: "Date",
+                        property: propertyNames.date,
                         date: {
                             on_or_after: from,
                         },
                     },
                     {
-                        property: "Date",
+                        property: propertyNames.date,
                         date: {
                             on_or_before: to,
                         },
@@ -73,23 +75,24 @@ async function fetchFromDatabase(
             },
         });
 
-        // Map Notion pages to Transaction objects
+        // Use a type guard to filter out any malformed pages before mapping
         return response.results.map((page: any): Transaction => {
             const properties = page.properties;
-            const descriptionProp = properties['Expense']['title'][0]['plain_text'];
-            const amountProp = properties['Amount']['number'];
-            const dateProp = properties['Date']['date']?.['start'] || null;
+            // Title properties can have different names, e.g., 'Expense' or 'Name'
+            const descriptionProp = properties[propertyNames.description]['title'][0]['plain_text'];
+            const amountProp = properties[propertyNames.amount]['number'];
+            const dateProp = properties[propertyNames.date]['date']?.['start'] || null;
 
             return {
                 id: page.id,
                 date: dateProp,
                 description: descriptionProp,
                 amount: amountProp,
-                type: 'Expense',
+                type: type,
             };
         });
     } catch (error) {
-        console.log(`Error fetching Expense transactions for credit card from Notion (DB ID: ${databaseId}):`, error);
+        console.log(`Error fetching ${type} transactions from Notion (DB ID: ${databaseId}):`, error);
         return []; // Return empty array on error to not fail the entire request
     }
 }
@@ -106,25 +109,40 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Notion API key is not configured." }, { status: 500 });
         }
         if (!creditCardId || !month || !year) {
-            return NextResponse.json({ error: "creditCardId, month, and year are required query parameters." }, { status: 400 });
+            return NextResponse.json({ error: "bankAccountId, month, and year are required query parameters." }, { status: 400 });
         }
 
         const { startDate, endDate } = getFromToDates(month, parseInt(year, 10));
         const from = startDate.toISOString().split('T')[0];
         const to = endDate.toISOString().split('T')[0];
 
-        const transactions = await fetchFromDatabase(EXPENSE_DB_ID, creditCardId, from, to);
+        const [expenseTransactions, incomeTransactions, investmentTransactions] = await Promise.all([
+            // Fetch Expenses
+            fetchFromDatabase(EXPENSE_DB_ID, creditCardId, from, to, 'Expense', {
+                date: 'Date', amount: 'Amount', description: 'Expense', relation: 'Credit Card Account'
+            }),
+            // Fetch Incomes
+            fetchFromDatabase(INCOME_DB_ID, creditCardId, from, to, 'Income', {
+                date: 'Date', amount: 'Amount', description: 'Description', relation: 'Credit Card Account'
+            }),
+            // Fetch Investments
+            fetchFromDatabase(INVESTMENT_DB_ID, creditCardId, from, to, 'Investment', {
+                date: 'Investment Date', amount: 'Invested Amount', description: 'Description', relation: 'Bank Account'
+            })
+        ]);
+        console.log("investmentTransactions ", investmentTransactions);
+        const allTransactions = [...expenseTransactions, ...incomeTransactions, ...investmentTransactions];
         
-        transactions.sort((a, b) => {
+        allTransactions.sort((a, b) => {
             if (!a.date) return 1;
             if (!b.date) return -1;
             return new Date(b.date).getTime() - new Date(a.date).getTime();
         });
 
-        return NextResponse.json({ transactions });
+        return NextResponse.json({ transactions: allTransactions });
 
     } catch (error) {
-        console.error("Error in /api/credit-card-transactions:", error);
+        console.error("Error in /api/bank-transactions:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while fetching transactions.";
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
