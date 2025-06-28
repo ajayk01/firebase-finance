@@ -136,6 +136,7 @@ export default function DashboardPage() {
   const [transactionDate, setTransactionDate] = useState<{ month: string; year: number } | null>(null);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
   const [isFetchingMoreTransactions, setIsFetchingMoreTransactions] = useState(false);
+  const [transactionEntityType, setTransactionEntityType] = useState<'bank' | 'credit-card' | null>(null);
   
   const availableYears = useMemo(() => getAvailableYears(), []);
 
@@ -283,6 +284,7 @@ export default function DashboardPage() {
   const handleViewBankTransactions = async (account: BankAccount) => {
     setTransactionDialogTitle(`${account.name} Transactions`);
     setSelectedAccountId(account.id);
+    setTransactionEntityType('bank');
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
@@ -301,7 +303,7 @@ export default function DashboardPage() {
       const data = await res.json();
       const fetchedTransactions = data.transactions || [];
       setTransactions(fetchedTransactions);
-      if (fetchedTransactions.length < 10) { // Or some other threshold
+      if (fetchedTransactions.length === 0) {
         setHasMoreTransactions(false);
       }
     } catch (error) {
@@ -312,7 +314,7 @@ export default function DashboardPage() {
   };
 
   const handleLoadMoreTransactions = async () => {
-    if (!transactionDate || isFetchingMoreTransactions || !hasMoreTransactions || !selectedAccountId) return;
+    if (!transactionDate || isFetchingMoreTransactions || !hasMoreTransactions || !selectedAccountId || !transactionEntityType) return;
 
     setIsFetchingMoreTransactions(true);
     
@@ -326,7 +328,12 @@ export default function DashboardPage() {
     const nextDateToFetch = { month: prevMonthValue, year: prevYear };
 
     try {
-        const res = await fetch(`/api/bank-transactions?bankAccountId=${selectedAccountId}&month=${nextDateToFetch.month}&year=${nextDateToFetch.year}`);
+        const endpoint = transactionEntityType === 'bank'
+          ? `/api/bank-transactions?bankAccountId=${selectedAccountId}`
+          : `/api/credit-card-transactions?creditCardId=${selectedAccountId}`;
+
+        const res = await fetch(`${endpoint}&month=${nextDateToFetch.month}&year=${nextDateToFetch.year}`);
+
         if (!res.ok) {
             const errorData = await res.json();
             throw new Error(errorData.error || 'Failed to fetch more transactions');
@@ -348,26 +355,36 @@ export default function DashboardPage() {
     }
   };
   
-  const handleViewCreditCardTransactions = (card: CreditCardAccount) => {
-    setTransactionDialogTitle(card.name);
+  const handleViewCreditCardTransactions = async (card: CreditCardAccount) => {
+    setTransactionDialogTitle(`${card.name} Transactions`);
+    setSelectedAccountId(card.id);
+    setTransactionEntityType('credit-card');
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
-    setHasMoreTransactions(false); // Mock data is not paginated
+    setHasMoreTransactions(true);
 
-    setTimeout(() => {
-        const descriptions = ['Swiggy', 'Amazon', 'Myntra', 'Zomato', 'Uber Ride'];
-        const mockTransactions: Transaction[] = Array.from({ length: 5 }, (_, index) => ({
-            id: `cc-${card.id}-${index}`,
-            date: new Date(Date.now() - index * 2 * 24 * 60 * 60 * 1000).toISOString(),
-            description: `${descriptions[index % descriptions.length]} on ${card.name}`,
-            amount: parseFloat((Math.random() * (2000 - 100) + 100).toFixed(2)),
-            type: 'Expense',
-        }));
-        setTransactions(mockTransactions);
-        setIsTransactionsLoading(false);
-    }, 1000);
+    const initialDate = { month: monthOptions[now.getMonth()].value, year: now.getFullYear() };
+    setTransactionDate(initialDate);
+
+    try {
+      const res = await fetch(`/api/credit-card-transactions?creditCardId=${card.id}&month=${initialDate.month}&year=${initialDate.year}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch transactions');
+      }
+      const data = await res.json();
+      const fetchedTransactions = data.transactions || [];
+      setTransactions(fetchedTransactions);
+      if (fetchedTransactions.length === 0) {
+        setHasMoreTransactions(false);
+      }
+    } catch (error) {
+      setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred");
+    } finally {
+      setIsTransactionsLoading(false);
+    }
   };
 
   const handleViewMonthlyTransactions = (
@@ -611,6 +628,7 @@ export default function DashboardPage() {
           if (!isOpen) {
             setSelectedAccountId(null);
             setTransactionDialogTitle(null);
+            setTransactionEntityType(null);
           }
         }}
         transactions={transactions}
