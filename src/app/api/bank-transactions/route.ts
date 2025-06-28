@@ -17,22 +17,22 @@ interface Transaction {
     type: 'Income' | 'Expense' | 'Investment' | 'Other';
 }
 
-const monthMap: Record<string, number> = {
+const monthMap: Record<string, number> = 
+{
   jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
-
 function getFromToDates(month: string, year: number) {
-    const monthIndex = monthMap[month.toLowerCase()];
+  const monthIndex = monthMap[month.toLowerCase()];
+
     if (monthIndex === undefined) {
-        throw new Error("Invalid month provided.");
+        throw new Error("Invalid month provided. Please use full month names (e.g., 'Jan', 'February').");
     }
-    const startDate = new Date(Date.UTC(year, monthIndex, 1));
-    const endDate = new Date(Date.UTC(year, monthIndex + 1, 0, 23, 59, 59)); // End of day UTC
-    return { 
-        from: startDate.toISOString().split('T')[0], 
-        to: endDate.toISOString().split('T')[0] 
-    };
+
+    const startDate = new Date(year, monthIndex, 1);
+    const endDate = new Date(year, monthIndex + 1, 0);
+
+    return { startDate, endDate };
 }
 
 async function fetchFromDatabase(
@@ -76,14 +76,13 @@ async function fetchFromDatabase(
         });
 
         // Use a type guard to filter out any malformed pages before mapping
-        const validPages = response.results.filter((page: any) => 
-            page.properties?.[propertyNames.description]?.['title']?.[0]?.['plain_text'] &&
-            typeof page.properties?.[propertyNames.amount]?.['number'] === 'number'
-        );
-
-        return validPages.map((page: any): Transaction => {
+        return response.results.map((page: any): Transaction => {
             const properties = page.properties;
             // Title properties can have different names, e.g., 'Expense' or 'Name'
+            if(type == "Investment")
+            {
+                console.log(properties)
+            }
             const descriptionProp = properties[propertyNames.description]['title'][0]['plain_text'];
             const amountProp = properties[propertyNames.amount]['number'];
             const dateProp = properties[propertyNames.date]['date']?.['start'] || null;
@@ -97,7 +96,7 @@ async function fetchFromDatabase(
             };
         });
     } catch (error) {
-        console.error(`Error fetching ${type} transactions from Notion (DB ID: ${databaseId}):`, error);
+        console.log(`Error fetching ${type} transactions from Notion (DB ID: ${databaseId}):`, error);
         return []; // Return empty array on error to not fail the entire request
     }
 }
@@ -117,7 +116,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "bankAccountId, month, and year are required query parameters." }, { status: 400 });
         }
 
-        const { from, to } = getFromToDates(month, parseInt(year, 10));
+        const { startDate, endDate } = getFromToDates(month, parseInt(year, 10));
+        const from = startDate.toISOString().split('T')[0];
+        const to = endDate.toISOString().split('T')[0];
 
         const [expenseTransactions, incomeTransactions, investmentTransactions] = await Promise.all([
             // Fetch Expenses
@@ -126,14 +127,14 @@ export async function GET(request: NextRequest) {
             }),
             // Fetch Incomes
             fetchFromDatabase(INCOME_DB_ID, bankAccountId, from, to, 'Income', {
-                date: 'Date', amount: 'Amount', description: 'Income', relation: 'Bank Account'
+                date: 'Date', amount: 'Amount', description: 'Description', relation: 'Accounts'
             }),
             // Fetch Investments
             fetchFromDatabase(INVESTMENT_DB_ID, bankAccountId, from, to, 'Investment', {
-                date: 'Investment Date', amount: 'Invested Amount', description: 'Name', relation: 'Bank Account'
+                date: 'Investment Date', amount: 'Invested Amount', description: 'Description', relation: 'Bank Account'
             })
         ]);
-
+        console.log("investmentTransactions ", investmentTransactions);
         const allTransactions = [...expenseTransactions, ...incomeTransactions, ...investmentTransactions];
         
         allTransactions.sort((a, b) => {
