@@ -380,32 +380,6 @@ export default function DashboardPage() {
     });
     return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
   }, [apiMonthlyExpenses]);
-
-  const currentMonthIncomePieData = useMemo(() => {
-    const aggregated: { [key: string]: number } = {};
-    apiMonthlyIncome.forEach(item => {
-      const value = parseCurrency(item.expense);
-      if (aggregated[item.category]) {
-        aggregated[item.category] += value;
-      } else {
-        aggregated[item.category] = value;
-      }
-    });
-    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
-  }, [apiMonthlyIncome]);
-
-  const currentMonthInvestmentPieData = useMemo(() => {
-    const aggregated: { [key: string]: number } = {};
-    apiMonthlyInvestments.forEach(item => {
-      const value = parseCurrency(item.expense);
-      if (aggregated[item.category]) {
-        aggregated[item.category] += value;
-      } else {
-        aggregated[item.category] = value;
-      }
-    });
-    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
-  }, [apiMonthlyInvestments]);
   
   const financialSnapshotTableData = useMemo(() => {
     const monthIndex = monthOptions.findIndex(m => m.value === selectedSummaryDetailMonth);
@@ -507,74 +481,61 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Monthly Income Overview</h2>
-          {isIncomeLoading && <p className="text-muted-foreground py-4">Loading income data...</p>}
-          {renderError(incomeError, "income data")}
-          {!isIncomeLoading && !incomeError && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <ExpenseBreakdownTable 
-                  title="Income Breakdown" 
-                  selectedMonth={selectedIncomeMonth} 
-                  onMonthChange={setSelectedIncomeMonth} 
-                  months={monthOptions} 
-                  selectedYear={selectedIncomeYear} 
-                  onYearChange={setSelectedIncomeYear} 
-                  years={availableYears} 
-                  data={apiMonthlyIncome} 
-                  amountColumnHeaderText="Income" 
-                  amountColumnItemTextColorClassName="text-green-600 font-medium" 
-                  categoryTotalTextColorClassName="text-green-700 font-semibold" 
-                  grandTotalTextColorClassName="text-green-700"
-                  onViewTransactions={() => handleViewMonthlyTransactions(
-                    `${monthOptions.find(m => m.value === selectedIncomeMonth)?.label} ${selectedIncomeYear} Income`,
-                    apiMonthlyIncome,
-                    'Income'
-                  )}
-                />
-              </div>
-              <div>
-                <ExpensePieChart data={currentMonthIncomePieData} chartTitle="Selected Month Income" chartDescription="Breakdown By Category" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Investment Details</h2>
-           {isInvestmentsLoading && <p className="text-muted-foreground py-4">Loading investment data...</p>}
-           {renderError(investmentsError, "investment data")}
-           {!isInvestmentsLoading && !investmentsError && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <ExpenseBreakdownTable 
-                  title="Investment Breakdown" 
-                  selectedMonth={selectedInvestmentMonth} 
-                  onMonthChange={setSelectedInvestmentMonth} 
-                  months={monthOptions} 
-                  selectedYear={selectedInvestmentYear} 
-                  onYearChange={setSelectedInvestmentYear} 
-                  years={availableYears} 
-                  data={apiMonthlyInvestments} 
-                  amountColumnHeaderText="Investment" 
-                  amountColumnItemTextColorClassName="text-primary font-medium" 
-                  categoryTotalTextColorClassName="text-primary font-semibold" 
-                  grandTotalTextColorClassName="text-primary" 
-                  showSubCategoryColumn={false} 
-                  showCategoryTotalRow={false} 
-                  onViewTransactions={() => handleViewMonthlyTransactions(
-                    `${monthOptions.find(m => m.value === selectedInvestmentMonth)?.label} ${selectedInvestmentYear} Investments`,
-                    apiMonthlyInvestments,
-                    'Transfer'
-                  )}
-                />
-              </div>
-              <div>
-                <ExpensePieChart data={currentMonthInvestmentPieData} chartTitle="Selected Month Investments" chartDescription="Breakdown By Category" />
-              </div>
-            </div>
-           )}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Monthly Income Overview</h2>
+            {isIncomeLoading && <p className="text-muted-foreground py-4">Loading income data...</p>}
+            {renderError(incomeError, "income data")}
+            {!isIncomeLoading && !incomeError && (
+              <ExpenseBreakdownTable 
+                title="Income Breakdown" 
+                selectedMonth={selectedIncomeMonth} 
+                onMonthChange={setSelectedIncomeMonth} 
+                months={monthOptions} 
+                selectedYear={selectedIncomeYear} 
+                onYearChange={setSelectedIncomeYear} 
+                years={availableYears} 
+                data={apiMonthlyIncome} 
+                amountColumnHeaderText="Income" 
+                amountColumnItemTextColorClassName="text-green-600 font-medium" 
+                categoryTotalTextColorClassName="text-green-700 font-semibold" 
+                grandTotalTextColorClassName="text-green-700"
+                onViewTransactions={() => handleViewMonthlyTransactions(
+                  `${monthOptions.find(m => m.value === selectedIncomeMonth)?.label} ${selectedIncomeYear} Income`,
+                  apiMonthlyIncome,
+                  'Income'
+                )}
+              />
+            )}
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Investment Details</h2>
+            {isInvestmentsLoading && <p className="text-muted-foreground py-4">Loading investment data...</p>}
+            {renderError(investmentsError, "investment data")}
+            {!isInvestmentsLoading && !investmentsError && (
+              <ExpenseBreakdownTable 
+                title="Investment Breakdown" 
+                selectedMonth={selectedInvestmentMonth} 
+                onMonthChange={setSelectedInvestmentMonth} 
+                months={monthOptions} 
+                selectedYear={selectedInvestmentYear} 
+                onYearChange={setSelectedInvestmentYear} 
+                years={availableYears} 
+                data={apiMonthlyInvestments} 
+                amountColumnHeaderText="Investment" 
+                amountColumnItemTextColorClassName="text-primary font-medium" 
+                categoryTotalTextColorClassName="text-primary font-semibold" 
+                grandTotalTextColorClassName="text-primary" 
+                showSubCategoryColumn={false} 
+                showCategoryTotalRow={false} 
+                onViewTransactions={() => handleViewMonthlyTransactions(
+                  `${monthOptions.find(m => m.value === selectedInvestmentMonth)?.label} ${selectedInvestmentYear} Investments`,
+                  apiMonthlyInvestments,
+                  'Transfer'
+                )}
+              />
+            )}
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-10 gap-6">
