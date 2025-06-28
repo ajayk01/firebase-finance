@@ -53,7 +53,7 @@ interface Transaction {
   date: string | null;
   description: string;
   amount: number;
-  type: 'Income' | 'Expense' | 'Transfer' | 'Other';
+  type: 'Income' | 'Expense' | 'Investment' | 'Transfer' | 'Other';
   category?: string;
   subCategory?: string;
 }
@@ -132,6 +132,10 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState<boolean>(false);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [transactionDate, setTransactionDate] = useState<{ month: string; year: number } | null>(null);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
+  const [isFetchingMoreTransactions, setIsFetchingMoreTransactions] = useState(false);
   
   const availableYears = useMemo(() => getAvailableYears(), []);
 
@@ -277,24 +281,70 @@ export default function DashboardPage() {
 
   // --- Event Handlers ---
   const handleViewBankTransactions = async (account: BankAccount) => {
-    setTransactionDialogTitle(account.name);
+    setTransactionDialogTitle(`${account.name} Transactions`);
+    setSelectedAccountId(account.id);
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
+    setHasMoreTransactions(true); // Reset for new account view
+
+    const initialDate = { month: monthOptions[now.getMonth()].value, year: now.getFullYear() };
+    setTransactionDate(initialDate);
 
     try {
-      const res = await fetch(`/api/bank-transactions?bankAccountId=${account.id}`);
+      const res = await fetch(`/api/bank-transactions?bankAccountId=${account.id}&month=${initialDate.month}&year=${initialDate.year}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch transactions');
       }
       const data = await res.json();
-      setTransactions(data.transactions || []);
+      const fetchedTransactions = data.transactions || [];
+      setTransactions(fetchedTransactions);
+      if (fetchedTransactions.length < 10) { // Or some other threshold
+        setHasMoreTransactions(false);
+      }
     } catch (error) {
       setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
       setIsTransactionsLoading(false);
+    }
+  };
+
+  const handleLoadMoreTransactions = async () => {
+    if (!transactionDate || isFetchingMoreTransactions || !hasMoreTransactions || !selectedAccountId) return;
+
+    setIsFetchingMoreTransactions(true);
+    
+    let prevMonthIndex = monthOptions.findIndex(m => m.value === transactionDate.month) - 1;
+    let prevYear = transactionDate.year;
+    if (prevMonthIndex < 0) {
+        prevMonthIndex = 11; // December
+        prevYear -= 1;
+    }
+    const prevMonthValue = monthOptions[prevMonthIndex].value;
+    const nextDateToFetch = { month: prevMonthValue, year: prevYear };
+
+    try {
+        const res = await fetch(`/api/bank-transactions?bankAccountId=${selectedAccountId}&month=${nextDateToFetch.month}&year=${nextDateToFetch.year}`);
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to fetch more transactions');
+        }
+        const data = await res.json();
+        const newTransactions = data.transactions || [];
+        
+        setTransactions(prev => [...prev, ...newTransactions]);
+        
+        if (newTransactions.length === 0) {
+            setHasMoreTransactions(false);
+        }
+        
+        setTransactionDate(nextDateToFetch);
+    } catch (error) {
+        setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred while loading more data");
+    } finally {
+        setIsFetchingMoreTransactions(false);
     }
   };
   
@@ -304,6 +354,7 @@ export default function DashboardPage() {
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
+    setHasMoreTransactions(false); // Mock data is not paginated
 
     setTimeout(() => {
         const descriptions = ['Swiggy', 'Amazon', 'Myntra', 'Zomato', 'Uber Ride'];
@@ -328,6 +379,7 @@ export default function DashboardPage() {
     setIsTransactionDialogOpen(true);
     setTransactionsError(null);
     setTransactions([]);
+    setHasMoreTransactions(false); // Not paginated for these views
 
     // For 'Expense', the sourceData is now the raw transactions array.
     if (type === 'Expense') {
@@ -373,7 +425,7 @@ export default function DashboardPage() {
         aggregated[item.category] = value;
       }
     });
-    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
+    return Object.entries(aggregated).map(([name, value]) => ({ name, value, fill: 'hsl(var(--chart-2))' }));
   }, [apiMonthlyExpenses]);
   
   const financialSnapshotTableData = useMemo(() => {
@@ -554,11 +606,20 @@ export default function DashboardPage() {
       </main>
       <TransactionDialog
         open={isTransactionDialogOpen}
-        onOpenChange={setIsTransactionDialogOpen}
+        onOpenChange={(isOpen) => {
+          setIsTransactionDialogOpen(isOpen);
+          if (!isOpen) {
+            setSelectedAccountId(null);
+            setTransactionDialogTitle(null);
+          }
+        }}
         transactions={transactions}
         title={transactionDialogTitle}
         isLoading={isTransactionsLoading}
         error={transactionsError}
+        onLoadMore={handleLoadMoreTransactions}
+        hasMore={hasMoreTransactions}
+        isLoadingMore={isFetchingMoreTransactions}
       />
     </div>
   );
