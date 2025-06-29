@@ -5,60 +5,76 @@ import { Client } from '@notionhq/client';
 
 // Initialize Notion client
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const EXPENSE_DB_ID = process.env.EXPENSE_DB_ID;
-const INCOME_DB_ID = process.env.INCOME_DB_ID;
-const INVESTMENT_TRANS_DB_ID = process.env.INVESTMENT_TRANS_DB_ID;
+const NOTION_YEARLY_SUMMARY_DB_ID = process.env.NOTION_YEARLY_SUMMARY_DB_ID;
 const NOTION_BANK_ACCOUNTS_DB_ID = process.env.NOTION_BANK_ACCOUNTS_DB_ID;
 
 const months = [
-    { name: "Jan", index: 0 }, { name: "Feb", index: 1 }, { name: "Mar", index: 2 },
-    { name: "Apr", index: 3 }, { name: "May", index: 4 }, { name: "Jun", index: 5 },
-    { name: "Jul", index: 6 }, { name: "Aug", index: 7 }, { name: "Sep", index: 8 },
-    { name: "Oct", index: 9 }, { name: "Nov", index: 10 }, { name: "Dec", index: 11 },
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
 /**
- * Fetches the total amount from a specific Notion database for a given month and year.
+ * Fetches pre-aggregated yearly summary data from a specific Notion database.
  */
-async function getMonthlyTotal(databaseId: string | undefined, dateProperty: string, amountProperty: string, year: number, monthIndex: number): Promise<number> {
-    if (!databaseId) {
-        return 0; // Silently fail if DB ID is not provided
+async function fetchYearlySummaryFromNotion(year: number) {
+    if (!NOTION_YEARLY_SUMMARY_DB_ID) {
+        throw new Error("NOTION_YEARLY_SUMMARY_DB_ID is not set in environment variables.");
     }
-    const startDate = new Date(year, monthIndex, 1);
-    const endDate = new Date(year, monthIndex + 1, 0); // Last day of the month
+
+    // Initialize summary data with 0s for all months
+    const summaryData = months.map(monthName => ({
+        month: monthName,
+        expense: 0,
+        income: 0,
+        investment: 0,
+    }));
 
     try {
         const response = await notion.databases.query({
-            database_id: databaseId,
+            database_id: NOTION_YEARLY_SUMMARY_DB_ID,
             filter: {
-                and: [
-                    {
-                        property: dateProperty,
-                        date: {
-                            on_or_after: startDate.toISOString().split('T')[0],
-                        },
-                    },
-                    {
-                        property: dateProperty,
-                        date: {
-                            on_or_before: endDate.toISOString().split('T')[0],
-                        },
-                    },
-                ],
+                // Assuming 'Month - Year' is a Title property, e.g. "2024-05"
+                property: 'Month - Year',
+                title: {
+                    starts_with: `${year}-`,
+                },
             },
+            sorts: [
+                {
+                    property: 'Month - Year',
+                    direction: 'ascending',
+                },
+            ],
         });
 
-        const total = response.results.reduce((sum, page: any) => {
-            const amount = page.properties[amountProperty]?.number ?? 0;
-            return sum + amount;
-        }, 0);
+        // Map response to our summaryData structure
+        response.results.forEach((page: any) => {
+            const properties = page.properties;
+            const monthYearStr = properties['Month - Year']?.title?.[0]?.plain_text; // e.g., "2025-06"
+            if (!monthYearStr || !monthYearStr.includes('-')) return;
 
-        return total;
+            const monthIndex = parseInt(monthYearStr.split('-')[1], 10) - 1;
+
+            if (monthIndex >= 0 && monthIndex < 12) {
+                // Handle both Number and Formula properties for flexibility
+                const expense = properties['Expense']?.number ?? properties['Expense']?.formula?.number ?? 0;
+                const income = properties['Income']?.number ?? properties['Income']?.formula?.number ?? 0;
+                const investment = properties['Investments']?.number ?? properties['Investments']?.formula?.number ?? 0;
+                
+                summaryData[monthIndex].expense = expense;
+                summaryData[monthIndex].income = income;
+                summaryData[monthIndex].investment = investment;
+            }
+        });
+        
+        return summaryData;
+
     } catch (error) {
-        console.error(`Error fetching total for DB ${databaseId} for month ${monthIndex + 1}/${year}:`, error);
-        return 0; // Return 0 on error to not fail the entire request
+        console.error(`Error fetching yearly summary for ${year} from Notion:`, error);
+        // On error, return the initialized array of zeros to avoid breaking the frontend chart.
+        return summaryData;
     }
 }
+
 
 /**
  * Fetches the sum of all bank account balances from Notion.
@@ -96,24 +112,13 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Year is a required query parameter." }, { status: 400 });
         }
         const year = parseInt(yearParam, 10);
-
-        // Fetch all monthly totals in parallel
-        const summaryDataPromises = months.map(async (month) => {
-            const [expense, income, investment] = await Promise.all([
-                getMonthlyTotal(EXPENSE_DB_ID, 'Date', 'Amount', year, month.index),
-                getMonthlyTotal(INCOME_DB_ID, 'Date', 'Amount', year, month.index),
-                getMonthlyTotal(INVESTMENT_TRANS_DB_ID, 'Investment Date', 'Invested Amount', year, month.index),
-            ]);
-            return {
-                month: month.name,
-                expense,
-                income,
-                investment,
-            };
-        });
+        
+        if (!process.env.NOTION_YEARLY_SUMMARY_DB_ID) {
+             return NextResponse.json({ error: "NOTION_YEARLY_SUMMARY_DB_ID is not configured in environment variables. Please add it to your .env file." }, { status: 500 });
+        }
 
         const [summaryData, totalBankBalance] = await Promise.all([
-            Promise.all(summaryDataPromises),
+            fetchYearlySummaryFromNotion(year),
             fetchTotalBankBalance()
         ]);
 
