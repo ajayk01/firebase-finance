@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     session.username = username;
     session.isLoggedIn = true;
     await session.save();
-
+    console.log(`User ${username} logged in successfully.`);
     return NextResponse.json({ success: true, user: { username } });
 
   } catch (error) {
