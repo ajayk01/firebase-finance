@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Notion API key is not configured." }, { status: 500 });
   }
 
-  const session = await getSession();
-  const { username, password } = await request.json();
+    const session = await getSession();
+    const { username, password } = await request.json();
 
   if (!username || !password) {
     return NextResponse.json({ error: 'Username and password are required.' }, { status: 400 });
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const response = await notion.databases.query({
       database_id: NOTION_USERS_DB_ID,
       filter: {
-        property: 'Username',
+        property: 'Name',
         title: {
           equals: username,
         },
