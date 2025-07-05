@@ -159,8 +159,8 @@ export default function DashboardPage() {
   const [isTransactionsLoading, setIsTransactionsLoading] = useState<boolean>(false);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [transactionDate, setTransactionDate] = useState<{ month: string; year: number } | null>(null);
-  const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
+  const [transactionPage, setTransactionPage] = useState<number>(1);
+  const [allFetchedTransactions, setAllFetchedTransactions] = useState<Transaction[]>([]);
   const [isFetchingMoreTransactions, setIsFetchingMoreTransactions] = useState(false);
   const [transactionEntityType, setTransactionEntityType] = useState<'bank' | 'credit-card' | null>(null);
   
@@ -176,6 +176,10 @@ export default function DashboardPage() {
         }
         return newSet;
     });
+  };
+
+  const handleClearExclusions = () => {
+    setExcludedExpenseIds(new Set());
   };
 
   // --- Data Fetching Effects ---
@@ -322,27 +326,23 @@ export default function DashboardPage() {
     setTransactionDialogTitle(`${account.name} Transactions`);
     setSelectedAccountId(account.id);
     setTransactionEntityType('bank');
+    setTransactionPage(1);
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
-    setHasMoreTransactions(true); // Reset for new account view
-
-    const initialDate = { month: monthOptions[now.getMonth()].value, year: now.getFullYear() };
-    setTransactionDate(initialDate);
+    setAllFetchedTransactions([]);
 
     try {
-      const res = await fetch(`/api/bank-transactions?bankAccountId=${account.id}&month=${initialDate.month}&year=${initialDate.year}`);
+      const res = await fetch(`/api/bank-transactions?bankAccountId=${account.id}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch transactions');
       }
       const data = await res.json();
       const fetchedTransactions = data.transactions || [];
-      setTransactions(fetchedTransactions);
-      if (fetchedTransactions.length === 0) {
-        setHasMoreTransactions(false);
-      }
+      setAllFetchedTransactions(fetchedTransactions);
+      setTransactions(fetchedTransactions.slice(0, 20));
     } catch (error) {
       setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
@@ -351,72 +351,36 @@ export default function DashboardPage() {
   };
 
   const handleLoadMoreTransactions = async () => {
-    if (!transactionDate || isFetchingMoreTransactions || !hasMoreTransactions || !selectedAccountId || !transactionEntityType) return;
-
-    setIsFetchingMoreTransactions(true);
-    
-    let prevMonthIndex = monthOptions.findIndex(m => m.value === transactionDate.month) - 1;
-    let prevYear = transactionDate.year;
-    if (prevMonthIndex < 0) {
-        prevMonthIndex = 11; // December
-        prevYear -= 1;
-    }
-    const prevMonthValue = monthOptions[prevMonthIndex].value;
-    const nextDateToFetch = { month: prevMonthValue, year: prevYear };
-
-    try {
-        const endpoint = transactionEntityType === 'bank'
-          ? `/api/bank-transactions?bankAccountId=${selectedAccountId}`
-          : `/api/credit-card-transactions?creditCardId=${selectedAccountId}`;
-
-        const res = await fetch(`${endpoint}&month=${nextDateToFetch.month}&year=${nextDateToFetch.year}`);
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'Failed to fetch more transactions');
-        }
-        const data = await res.json();
-        const newTransactions = data.transactions || [];
-        
-        setTransactions(prev => [...prev, ...newTransactions]);
-        
-        if (newTransactions.length === 0) {
-            setHasMoreTransactions(false);
-        }
-        
-        setTransactionDate(nextDateToFetch);
-    } catch (error) {
-        setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred while loading more data");
-    } finally {
-        setIsFetchingMoreTransactions(false);
-    }
+      if (isFetchingMoreTransactions) return;
+      setIsFetchingMoreTransactions(true);
+      const nextPage = transactionPage + 1;
+      const newTransactions = allFetchedTransactions.slice(0, nextPage * 20);
+      setTransactions(newTransactions);
+      setTransactionPage(nextPage);
+      setIsFetchingMoreTransactions(false);
   };
   
   const handleViewCreditCardTransactions = async (card: CreditCardAccount) => {
     setTransactionDialogTitle(`${card.name} Transactions`);
     setSelectedAccountId(card.id);
     setTransactionEntityType('credit-card');
+    setTransactionPage(1);
     setIsTransactionDialogOpen(true);
     setIsTransactionsLoading(true);
     setTransactionsError(null);
     setTransactions([]);
-    setHasMoreTransactions(true);
-
-    const initialDate = { month: monthOptions[now.getMonth()].value, year: now.getFullYear() };
-    setTransactionDate(initialDate);
+    setAllFetchedTransactions([]);
 
     try {
-      const res = await fetch(`/api/credit-card-transactions?creditCardId=${card.id}&month=${initialDate.month}&year=${initialDate.year}`);
+      const res = await fetch(`/api/credit-card-transactions?creditCardId=${card.id}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch transactions');
       }
       const data = await res.json();
       const fetchedTransactions = data.transactions || [];
-      setTransactions(fetchedTransactions);
-      if (fetchedTransactions.length === 0) {
-        setHasMoreTransactions(false);
-      }
+      setAllFetchedTransactions(fetchedTransactions);
+      setTransactions(fetchedTransactions.slice(0, 20));
     } catch (error) {
       setTransactionsError(error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
@@ -433,12 +397,15 @@ export default function DashboardPage() {
     setIsTransactionDialogOpen(true);
     setTransactionsError(null);
     setTransactions([]);
-    setHasMoreTransactions(false); // Not paginated for these views
+    setAllFetchedTransactions([]);
+    setTransactionPage(1);
 
     // For 'Expense', the sourceData is now the raw transactions array.
     if (type === 'Expense') {
       setIsTransactionsLoading(false);
-      setTransactions(sourceData as Transaction[]);
+      const allTxs = sourceData as Transaction[];
+      setAllFetchedTransactions(allTxs);
+      setTransactions(allTxs.slice(0, 20));
       return;
     }
 
@@ -462,8 +429,9 @@ export default function DashboardPage() {
             subCategory: item.subCategory,
         }))
         .sort((a, b) => b.amount - a.amount);
-
-      setTransactions(mockTransactions);
+      
+      setAllFetchedTransactions(mockTransactions);
+      setTransactions(mockTransactions.slice(0, 20));
       setIsTransactionsLoading(false);
     }, 1000);
   };
@@ -527,6 +495,8 @@ export default function DashboardPage() {
         </div>
     );
   };
+  
+  const hasMoreTransactions = useMemo(() => transactions.length < allFetchedTransactions.length, [transactions, allFetchedTransactions]);
 
   return (
     <div className="flex flex-col min-h-screen w-full">
@@ -691,6 +661,7 @@ export default function DashboardPage() {
         isExcludable={transactionDialogTitle?.includes('Expenses')}
         excludedIds={excludedExpenseIds}
         onToggleExclude={handleToggleExcludeTransaction}
+        onClearExclusions={handleClearExclusions}
       />
     </div>
   );

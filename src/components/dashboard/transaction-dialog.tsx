@@ -47,6 +47,7 @@ interface TransactionDialogProps {
   isExcludable?: boolean;
   excludedIds?: Set<string>;
   onToggleExclude?: (id: string) => void;
+  onClearExclusions?: () => void;
 }
 
 const formatDate = (dateString: string | null) => {
@@ -84,6 +85,7 @@ export function TransactionDialog({
   isExcludable = false,
   excludedIds,
   onToggleExclude,
+  onClearExclusions,
 }: TransactionDialogProps) {
 
   const isMonthlySummary = React.useMemo(() =>
@@ -95,9 +97,19 @@ export function TransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1200px] h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{title || "Transactions"}</DialogTitle>
+          <div className="flex items-center justify-between pr-8">
+            <DialogTitle>{title || "Transactions"}</DialogTitle>
+            {isExcludable && excludedIds && excludedIds.size > 0 && onClearExclusions && (
+              <Button variant="outline" size="sm" onClick={onClearExclusions}>
+                Clear Selection ({excludedIds.size})
+              </Button>
+            )}
+          </div>
           <DialogDescription>
-            Showing the latest transactions.
+            {isExcludable
+              ? "Showing the latest transactions. Check items to exclude them from expense totals."
+              : "Showing the latest transactions."
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-hidden">
